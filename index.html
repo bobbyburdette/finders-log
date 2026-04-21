@@ -43,7 +43,7 @@
     /* HOME HEADER — centered logo treatment */
     .app-header-home { padding:0 !important; align-items:stretch !important; position:relative; }
     .app-header-home .header-center { display:block; width:100%; line-height:0; font-size:0; }
-    .app-header-home .header-actions { position:absolute; right:20px; top:50%; transform:translateY(-50%); }
+    .app-header-home .header-actions { display:none !important; }
     .header-btn { background:var(--gold); color:var(--bg); border:none; border-radius:1px; padding:10px 19px; font-family:'Crimson Pro',Georgia,serif; font-size:13px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; cursor:pointer; transition:background 0.2s,transform 0.2s; }
     .header-btn:hover { background:var(--gold-light); transform:translateY(-1px); }
     .back-btn { background:none; border:none; color:var(--muted); font-family:'Crimson Pro',Georgia,serif; font-size:17px; cursor:pointer; padding:4px 0; display:flex; align-items:center; gap:4px; transition:color 0.2s; }
@@ -288,7 +288,7 @@
     .col-panel { display:none; }
     .col-panel.active { display:block; }
     .col-section-header { padding:28px 20px 22px; text-align:center; border-bottom:1px solid var(--border); background:linear-gradient(to bottom,var(--surface),var(--bg2)); }
-    .col-section-icon { width:144px; height:144px; object-fit:contain; margin:0 auto 14px; display:block; filter:drop-shadow(0 4px 16px rgba(212,180,106,0.2)); }
+    .col-section-icon { width:100%; height:auto; object-fit:cover; margin:0 auto 14px; display:block; filter:drop-shadow(0 4px 16px rgba(212,180,106,0.2)); }
     .col-section-name { font-family:'Playfair Display',Georgia,serif; font-size:26px; font-weight:700; color:var(--cream); }
     .col-section-desc { font-size:15px; color:var(--muted); font-style:italic; margin-top:6px; }
     .collection-section { background:var(--surface); border-top:1px solid var(--border); border-bottom:1px solid var(--border); padding:20px; margin-bottom:2px; }
@@ -485,7 +485,7 @@
   <!-- THE CELLAR -->
   <div id="col-panel-cellar" class="col-panel active">
     <div class="col-section-header">
-      <img src="myCellar.png" class="col-section-icon">
+      <img src="MyCellar2.png" class="col-section-icon">
       <div class="col-section-name">The Cellar</div>
       <div class="col-section-desc">Your tobacco collection &amp; pipes</div>
     </div>
@@ -504,7 +504,7 @@
   <!-- THE HUMIDOR -->
   <div id="col-panel-humidor" class="col-panel">
     <div class="col-section-header">
-      <img src="myhumidor.png" class="col-section-icon">
+      <img src="MyHumidor2.png" class="col-section-icon">
       <div class="col-section-name">The Humidor</div>
       <div class="col-section-desc">Cigars in your rotation</div>
     </div>
@@ -518,7 +518,7 @@
   <!-- THE BAR -->
   <div id="col-panel-bar" class="col-panel">
     <div class="col-section-header">
-      <img src="myBar.png" class="col-section-icon">
+      <img src="MyBar2.png" class="col-section-icon">
       <div class="col-section-name">The Bar</div>
       <div class="col-section-desc">Bottles open, sealed &amp; on deck</div>
     </div>
