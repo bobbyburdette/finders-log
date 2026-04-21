@@ -48,6 +48,9 @@
     .header-btn:hover { background:var(--gold-light); transform:translateY(-1px); }
     .back-btn { background:none; border:none; color:var(--muted); font-family:'Crimson Pro',Georgia,serif; font-size:17px; cursor:pointer; padding:4px 0; display:flex; align-items:center; gap:4px; transition:color 0.2s; }
     .back-btn:hover { color:var(--cream); }
+    .back-img-btn { background:none; border:none; cursor:pointer; padding:0; display:flex; align-items:center; opacity:0.85; transition:opacity 0.15s; width:70px; }
+    .back-img-btn:hover { opacity:1; }
+    .back-img-btn img { filter:brightness(2); }
 
     /* BOTTOM NAV */
     .bottom-nav { position:fixed; bottom:0; left:0; right:0; background:rgba(10,8,6,0.97); border-top:1px solid var(--border2); display:flex; align-items:center; justify-content:space-around; padding:8px 0; padding-bottom:calc(8px + env(safe-area-inset-bottom)); z-index:150; backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); transform:translateZ(0); -webkit-transform:translateZ(0); will-change:transform; }
@@ -394,7 +397,7 @@
   <div class="home-hero">
 
     <div class="home-hero-headline">A Ledger of Good Taste.</div>
-    <div class="home-hero-body">A personal journal for pipe tobacco, cigars, and bourbon.</div>
+    <div class="home-hero-body">Your personal journal for pipes, cigars, &amp; whiskey.</div>
   </div>
 
   <div class="filter-tabs">
@@ -419,7 +422,7 @@
 <!-- PICKER VIEW -->
 <div id="view-picker" class="hidden">
   <div class="app-header">
-    <div style="width:70px"></div>
+    <button class="back-img-btn" onclick="showList()"><img src="backbtn.png" style="height:48px;width:auto;"></button>
     <h1>New Session</h1>
     <div style="width:70px"></div>
   </div>
@@ -444,8 +447,8 @@
 <!-- FORM VIEW -->
 <div id="view-form" class="hidden">
   <div class="app-header">
-    <div style="width:70px"></div>
-    <h1 id="form-title" style="display:flex;align-items:center;gap:10px"><img id="form-cat-icon" src="" style="width:32px;height:32px;object-fit:contain;display:none">New Entry</h1>
+    <button class="back-img-btn" onclick="showPicker()"><img src="backbtn.png" style="height:48px;width:auto;"></button>
+    <h1 id="form-title">New Entry</h1>
     <div style="width:70px"></div>
   </div>
   <input type="hidden" id="entry-id">
@@ -457,7 +460,7 @@
 <!-- DETAIL VIEW -->
 <div id="view-detail" class="hidden">
   <div class="app-header">
-    <div style="width:70px"></div>
+    <button class="back-img-btn" onclick="showList()"><img src="backbtn.png" style="height:48px;width:auto;"></button>
     <h1 id="detail-title">Entry</h1>
     <div style="display:flex;align-items:center;gap:8px">
       <button id="detail-fav-btn" class="fav-btn" onclick="toggleFavorite(currentEntryId,currentEntryCategory,event)" title="Favorite">♥</button>
@@ -470,7 +473,7 @@
 <!-- COLLECTION VIEW -->
 <div id="view-collection" class="hidden">
   <div class="app-header">
-    <div style="width:70px"></div>
+    <button class="back-img-btn" onclick="showList()"><img src="backbtn.png" style="height:48px;width:auto;"></button>
     <h1>My Collection</h1>
     <div style="width:70px"></div>
   </div>
