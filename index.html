@@ -158,11 +158,11 @@
     .field input[type=date]::-webkit-calendar-picker-indicator { filter:invert(0.5) sepia(1) saturate(2) hue-rotate(10deg); opacity:0.6; }
 
     /* SCORE ROW */
-    .score-row { display:flex; gap:3px; margin-top:10px; flex-wrap:wrap; align-items:center; }
+    .score-row { display:flex; gap:2px; margin-top:10px; flex-wrap:wrap; align-items:center; }
     .score-btn { width:34px; height:34px; border:1px solid var(--border2); border-radius:2px; background:var(--bg2); color:var(--muted); font-family:'Crimson Pro',Georgia,serif; font-size:15px; font-weight:500; cursor:pointer; transition:all 0.15s; display:flex; align-items:center; justify-content:center; }
     .score-btn:hover { border-color:var(--gold-dim); color:var(--cream); }
     .score-btn.active { background:var(--gold); border-color:var(--gold); color:var(--bg); font-weight:700; }
-    .score-btn.flame-score-btn { width:32px; height:32px; border:none; background:none; font-size:26px; padding:0; line-height:1; display:flex; align-items:center; justify-content:center; opacity:0.15; transition:opacity 0.15s, transform 0.1s; }
+    .score-btn.flame-score-btn { width:26px; height:26px; border:none; background:none; font-size:22px; padding:0; line-height:1; display:flex; align-items:center; justify-content:center; opacity:0.15; transition:opacity 0.15s, transform 0.1s; }
     .score-btn.flame-score-btn:hover { border:none; background:none; color:inherit; opacity:0.7; transform:scale(1.2); }
     .score-btn.flame-score-btn.active { background:none; border:none; color:inherit; opacity:1; }
 
@@ -252,8 +252,8 @@
     .full-only.visible { display:block; }
 
     /* FLAME RATING */
-    .flame-rating { display:flex; gap:10px; margin-top:10px; align-items:center; }
-    .flame-btn { font-size:26px; cursor:pointer; opacity:0.2; transition:opacity 0.15s, transform 0.15s; background:none; border:none; padding:0; line-height:1; }
+    .flame-rating { display:flex; gap:5px; margin-top:10px; align-items:center; }
+    .flame-btn { font-size:22px; cursor:pointer; opacity:0.2; transition:opacity 0.15s, transform 0.15s; background:none; border:none; padding:0; line-height:1; }
     .flame-btn.lit { opacity:1; }
     .flame-btn:hover { transform:scale(1.2); opacity:0.8; }
     /* GLASS RATING (whiskey) */
@@ -394,6 +394,7 @@
   <div class="home-hero">
 
     <div class="home-hero-headline">A Ledger of Good Taste.</div>
+    <div class="home-hero-body">A personal journal for pipe tobacco, cigars, and bourbon.</div>
   </div>
 
   <div class="filter-tabs">
