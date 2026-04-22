@@ -399,14 +399,14 @@
   <div class="home-hero">
 
     <div class="home-hero-headline">A Ledger of Good Taste.</div>
-    <div class="home-hero-body">Your personal journal for pipes, cigars, &amp; whiskey.</div>
+    <div class="home-hero-body">Your personal journal for pipes, cigars, &amp; spirits.</div>
   </div>
 
   <div class="filter-tabs">
     <button class="filter-tab active" data-cat="all" onclick="setFilter('all')">All</button>
-    <button class="filter-tab" data-cat="pipe" onclick="setFilter('pipe')">Pipe</button>
     <button class="filter-tab" data-cat="cigar" onclick="setFilter('cigar')">Cigar</button>
-    <button class="filter-tab" data-cat="whiskey" onclick="setFilter('whiskey')">Whiskey</button>
+    <button class="filter-tab" data-cat="pipe" onclick="setFilter('pipe')">Pipe</button>
+    <button class="filter-tab" data-cat="whiskey" onclick="setFilter('whiskey')">Spirits</button>
   </div>
 
   <div class="home-hero-img-wrap"></div>
@@ -429,19 +429,19 @@
     <div style="width:70px"></div>
   </div>
   <div class="picker-intro">What are you logging today?</div>
-  <div class="picker-card" onclick="showForm('pipe')">
-    <div class="picker-emoji"><img src="pipe.png" style="width:70px;height:70px;object-fit:contain"></div>
-    <div><div class="picker-label">Pipe</div><div class="picker-sub">Blends, bowls &amp; tasting notes</div></div>
-    <div class="picker-arrow">&#8250;</div>
-  </div>
   <div class="picker-card" onclick="showForm('cigar')">
     <div class="picker-emoji"><img src="cigar.png" style="width:70px;height:70px;object-fit:contain"></div>
     <div><div class="picker-label">Cigar</div><div class="picker-sub">Premium cigars &amp; sessions</div></div>
     <div class="picker-arrow">&#8250;</div>
   </div>
+  <div class="picker-card" onclick="showForm('pipe')">
+    <div class="picker-emoji"><img src="pipe.png" style="width:70px;height:70px;object-fit:contain"></div>
+    <div><div class="picker-label">Pipe</div><div class="picker-sub">Blends, bowls &amp; tasting notes</div></div>
+    <div class="picker-arrow">&#8250;</div>
+  </div>
   <div class="picker-card" onclick="showForm('whiskey')">
     <div class="picker-emoji"><img src="whiskey.png" style="width:70px;height:70px;object-fit:contain"></div>
-    <div><div class="picker-label">Whiskey</div><div class="picker-sub">Spirits, tastings &amp; pours</div></div>
+    <div><div class="picker-label">Spirits</div><div class="picker-sub">Whiskey, bourbon &amp; beyond</div></div>
     <div class="picker-arrow">&#8250;</div>
   </div>
 </div>
@@ -944,7 +944,7 @@ function showDetail(id,cat){
 }
 function backFromForm(){if(isNewEntry)showPicker();else showList();}
 
-function catLabel(cat){return{pipe:'Pipe',cigar:'Cigar',whiskey:'Whiskey'}[cat]||cat;}
+function catLabel(cat){return{pipe:'Pipe',cigar:'Cigar',whiskey:'Spirits'}[cat]||cat;}
 function catEmoji(cat){var imgs={pipe:'pipe.png',cigar:'cigar.png',whiskey:'whiskey.png'};return imgs[cat]?'<img src="'+imgs[cat]+'" style="width:52px;height:52px;object-fit:contain;vertical-align:middle">':'';}
 function catEmojiText(cat){return{pipe:'🪈',cigar:'🚬',whiskey:'🥃'}[cat]||'';}
 function entryName(e){
@@ -2020,6 +2020,8 @@ function buildPipeForm(){
     +'<div class="field" style="margin-top:20px"><label>Overall Enjoyment <span style="color:var(--border3);font-size:12px;font-style:normal;font-weight:400">— Total smoking satisfaction</span></label>'+flameRating10('enjoy_score')+'</div>'
   );
 
+  var quickNotesSection=fSec('Notes',fTA('quick_notes','Anything worth remembering?','Flavors, impressions, context — anything...'));
+
   var scoreSection=fSec('Overall Rating',
     fSugScore()
   );
@@ -2035,6 +2037,7 @@ function buildPipeForm(){
     +notesSection
     +burnSection
     +ratingSection
+    +quickNotesSection
     +scoreSection;
 }
 
@@ -2221,6 +2224,8 @@ function buildCigarForm(){
     +'<div class="field" style="margin-top:20px"><label>Overall Enjoyment <span style="color:var(--border3);font-size:12px;font-style:normal;font-weight:400">— Total smoking satisfaction</span></label>'+flameRating10('enjoy_score')+'</div>'
   );
 
+  var quickNotesSection=fSec('Notes',fTA('quick_notes','Anything worth remembering?','Flavors, impressions, context — anything...'));
+
   var scoreSection=fSec('Overall Rating',fSugScore());
 
   return modeToggle
@@ -2231,6 +2236,7 @@ function buildCigarForm(){
     +constructionSection
     +decisionsSection
     +ratingSection
+    +quickNotesSection
     +scoreSection;
 }
 
@@ -2289,6 +2295,8 @@ function buildWhiskeyForm(){
     +'<div class="field" style="margin-top:20px"><label>Overall Enjoyment <span style="color:var(--border3);font-size:12px;font-style:normal;font-weight:400">— Total drinking satisfaction</span></label>'+glassRating10('enjoy_score')+'</div>'
   );
 
+  var quickNotesSection=fSec('Notes',fTA('quick_notes','Anything worth remembering?','Flavors, impressions, context — anything...'));
+
   var scoreSection=fSec('Overall Rating',fSugScore());
 
   return modeToggle
@@ -2297,6 +2305,7 @@ function buildWhiskeyForm(){
     +notesSection
     +decisionsSection
     +ratingSection
+    +quickNotesSection
     +scoreSection;
 }
 
@@ -2417,7 +2426,7 @@ function fillForm(cat,e){
     var burnKeys=['relights','bite','gurgling','wentout','dottle'];
     burnKeys.forEach(function(k){var el=document.getElementById('f-burn-'+k);if(el)el.checked=!!e['burn_'+k];});
     setYNMVal('would_smoke_again',e.would_smoke_again);setYNMVal('cellar_worthy',e.cellar_worthy);
-    setTF('overall_thoughts',e.overall_thoughts);
+    setTF('overall_thoughts',e.overall_thoughts);setTF('quick_notes',e.quick_notes);
   }else if(cat==='cigar'){
     setTF('brand',e.brand);setTF('line_name',e.line_name);setTF('vitola_size',e.vitola_size);
     setPillVal('cut_type',e.cut_type);
@@ -2432,6 +2441,7 @@ function fillForm(cat,e){
     setFlameVal('flavor_score',e.flavor_score);setFlameVal('construction_score',e.construction_score);
     setFlameVal('draw_score',e.draw_score);setFlameVal('burn_score',e.burn_score);setFlameVal('aroma_score',e.aroma_score);
     setFlameVal('strength_score',e.strength_score);setFlameVal('enjoy_score',e.enjoy_score);
+    setTF('quick_notes',e.quick_notes);
   }else if(cat==='whiskey'){
     setTF('name',e.name);setTF('distillery_producer',e.distillery_producer);setPillVal('spirit_type',e.spirit_type);
     setTF('age_statement',e.age_statement);setTF('proof_abv',e.proof_abv);setTF('mashbill',e.mashbill);
@@ -2446,6 +2456,7 @@ function fillForm(cat,e){
     setGlassVal('value_score',e.value_score);setGlassVal('enjoy_score',e.enjoy_score);
     setYNMVal('would_buy_again',e.would_buy_again);setYNMVal('would_hunt_again',e.would_hunt_again);
     setPillVal('bottle_status_tag',e.bottle_status_tag);setTF('overall_thoughts',e.overall_thoughts);
+    setTF('quick_notes',e.quick_notes);
   }
   updateSuggestedScore();
 }
@@ -2457,7 +2468,7 @@ function getFormData(cat){
   var base={id:document.getElementById('entry-id').value||generateId(),category:cat,
     created_at:new Date().toISOString(),updated_at:new Date().toISOString(),
     entry_date:g('entry_date'),time_of_day:g('time_of_day'),location:g('location'),
-    overall_thoughts:g('overall_thoughts'),tags:currentTags.slice(),
+    overall_thoughts:g('overall_thoughts'),quick_notes:g('quick_notes'),tags:currentTags.slice(),
     final_score:null,use_final_override:false};
   if(cat==='pipe'){
     var cm={virginia:'Virginias',perique:'Perique',latakia:'Latakia',orientals:'Orientals',burley:'Burley',cavendish:'Cavendish',darkfired:'Dark Fired Kentucky',cigarleaf:'Cigar Leaf'};
