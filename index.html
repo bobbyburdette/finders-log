@@ -482,13 +482,27 @@
 
   <!-- Tab navigation -->
   <div class="col-tabs">
-    <button class="col-tab active" data-tab="cellar" onclick="showColTab('cellar')">The Cellar</button>
-    <button class="col-tab" data-tab="humidor" onclick="showColTab('humidor')">The Humidor</button>
+    <button class="col-tab active" data-tab="humidor" onclick="showColTab('humidor')">The Humidor</button>
+    <button class="col-tab" data-tab="cellar" onclick="showColTab('cellar')">The Cellar</button>
     <button class="col-tab" data-tab="bar" onclick="showColTab('bar')">The Bar</button>
   </div>
 
+  <!-- THE HUMIDOR -->
+  <div id="col-panel-humidor" class="col-panel active">
+    <div class="col-section-header">
+      <img src="MyHumidor2.png" class="col-section-icon">
+      <div class="col-section-name">The Humidor</div>
+      <div class="col-section-desc">Cigars in your rotation</div>
+    </div>
+    <div class="collection-section">
+      <div class="section-title">My Cigars</div>
+      <div id="col-cigars-list"></div>
+      <button class="add-pipe-btn" onclick="openAddCigarModal()">＋ &nbsp;Add a Cigar</button>
+    </div>
+  </div>
+
   <!-- THE CELLAR -->
-  <div id="col-panel-cellar" class="col-panel active">
+  <div id="col-panel-cellar" class="col-panel">
     <div class="col-section-header">
       <img src="MyCellar2.png" class="col-section-icon">
       <div class="col-section-name">The Cellar</div>
@@ -503,20 +517,6 @@
       <div class="section-title">My Pipes</div>
       <div id="col-pipes-list"></div>
       <button class="add-pipe-btn" onclick="openAddPipeModal()">＋ &nbsp;Add a Pipe</button>
-    </div>
-  </div>
-
-  <!-- THE HUMIDOR -->
-  <div id="col-panel-humidor" class="col-panel">
-    <div class="col-section-header">
-      <img src="MyHumidor2.png" class="col-section-icon">
-      <div class="col-section-name">The Humidor</div>
-      <div class="col-section-desc">Cigars in your rotation</div>
-    </div>
-    <div class="collection-section">
-      <div class="section-title">My Cigars</div>
-      <div id="col-cigars-list"></div>
-      <button class="add-pipe-btn" onclick="openAddCigarModal()">＋ &nbsp;Add a Cigar</button>
     </div>
   </div>
 
