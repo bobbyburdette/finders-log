@@ -1043,20 +1043,18 @@ function renderList(){
   el.innerHTML=entries.map(function(e){
     var score=displayScore(e),scoreStr=score!==null?score.toFixed(1):'—';
     var isFav=!!e.is_favorite;
+    var dateLine=(isFav?'<span style="color:#e05570;font-size:13px;margin-right:4px;">♥</span><span style="color:var(--border3);font-size:11px;margin-right:6px;">|</span>':'')+(e.entry_date?formatDate(e.entry_date):'No date')+(e.time_of_day?' &middot; '+e.time_of_day:'');
     return'<div class="entry-card" onclick="showDetail(\''+e.id+'\',\''+e.category+'\')">'
       +'<div class="entry-card-main">'
       +'<span class="entry-badge">'+catEmoji(e.category)+'</span>'
       +'<div class="entry-card-text">'
       +'<div class="entry-blend">'+esc(entryName(e))+'</div>'
-      +'<div class="entry-meta">'+(e.entry_date?formatDate(e.entry_date):'No date')+(e.time_of_day?' &middot; '+e.time_of_day:'')+'</div>'
+      +'<div class="entry-meta">'+dateLine+'</div>'
       +'</div>'
       +'</div>'
-      +'<div style="display:flex;align-items:center;gap:4px">'
-      +'<button class="fav-btn'+(isFav?' is-fav':'')+'" onclick="toggleFavorite(\''+e.id+'\',\''+e.category+'\',event)" title="Favorite">♥</button>'
       +'<div style="text-align:right">'
       +'<div class="entry-score">'+scoreStr+'<span class="score-denom"> /10</span></div>'
-      +'<div class="entry-chevron">&#8250;</div>'
-      +'</div></div></div>';
+      +'</div></div>';
   }).join('');
 }
 
