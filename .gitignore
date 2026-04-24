@@ -1,24 +1,11 @@
-# macOS
+.next
+node_modules
+*.log
+dist
+coverage
 .DS_Store
-.AppleDouble
-.LSOverride
-Thumbs.db
-
-# Working/backup files
-index-a.html
-index-b.html
-index-backup.html
-landing.html
-
-# Editor
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# Node (if ever added)
-node_modules/
-npm-debug.log*
-
-# Claude
 .claude/
+.webp
+*.zip
+Playfair_Display/
+Crimson_Pro,Playfair_Display/
