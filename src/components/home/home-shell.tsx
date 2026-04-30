@@ -4150,32 +4150,30 @@ export function HomeShell() {
               </article>
             </section>
 
-            {canShowProfileAuth ? (
-              <section className="cloud-strip profile-cloud-strip">
-                {authUserId ? (
-                  <div className="cloud-strip-actions">
-                    <button className="cloud-secondary-btn" type="button" onClick={() => void signOutOfCloud()} disabled={authBusy}>
-                      {authBusy ? "Working..." : "Sign Out"}
-                    </button>
-                  </div>
-                ) : (
-                  <div className="cloud-strip-actions">
-                    <input
-                      className="cloud-email-input"
-                      type="email"
-                      placeholder="Your email"
-                      value={authEmailInput}
-                      onChange={(event) => setAuthEmailInput(event.target.value)}
-                    />
-                    <button className="cloud-primary-btn" type="button" onClick={() => void sendMagicLink()} disabled={authBusy}>
-                      {authBusy ? "Sending..." : "Create Profile"}
-                    </button>
-                  </div>
-                )}
+            <section className="cloud-strip profile-cloud-strip">
+              {authUserId ? (
+                <div className="cloud-strip-actions">
+                  <button className="cloud-secondary-btn" type="button" onClick={() => void signOutOfCloud()} disabled={authBusy}>
+                    {authBusy ? "Working..." : "Sign Out"}
+                  </button>
+                </div>
+              ) : (
+                <div className="cloud-strip-actions">
+                  <input
+                    className="cloud-email-input"
+                    type="email"
+                    placeholder="Your email"
+                    value={authEmailInput}
+                    onChange={(event) => setAuthEmailInput(event.target.value)}
+                  />
+                  <button className="cloud-primary-btn" type="button" onClick={() => void sendMagicLink()} disabled={authBusy}>
+                    {authBusy ? "Sending..." : "Create Profile"}
+                  </button>
+                </div>
+              )}
 
-                {authNotice ? <div className="cloud-strip-note">{authNotice}</div> : null}
-              </section>
-            ) : null}
+              {authNotice ? <div className="cloud-strip-note">{authNotice}</div> : null}
+            </section>
 
             <section className="form-section profile-section">
               <div className="section-title">
