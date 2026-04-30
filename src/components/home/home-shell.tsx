@@ -645,6 +645,7 @@ function getSpiritRatingLabel(value: number) {
 export function HomeShell() {
   const { catalogService, pipeEntryService } = appServices;
   const isSupabaseMode = backendConfig.currentDataProvider === "supabase";
+  const canShowProfileAuth = Boolean(backendConfig.supabaseUrl);
   const [activeFilter, setActiveFilter] = useState("all");
   const [activeSort, setActiveSort] = useState("newest");
   const [searchOpen, setSearchOpen] = useState(false);
@@ -3084,7 +3085,7 @@ export function HomeShell() {
                 <button className="empty-btn" type="button" onClick={() => setView("picker")}>
                   + Log Your First Session
                 </button>
-                {isSupabaseMode && !authUserId ? (
+                {canShowProfileAuth && !authUserId ? (
                   <button className="quiet-link-btn" type="button" onClick={() => setView("profile")}>
                     Back Up Journal
                   </button>
@@ -4149,7 +4150,7 @@ export function HomeShell() {
               </article>
             </section>
 
-            {isSupabaseMode ? (
+            {canShowProfileAuth ? (
               <section className="cloud-strip profile-cloud-strip">
                 {authUserId ? (
                   <div className="cloud-strip-actions">
