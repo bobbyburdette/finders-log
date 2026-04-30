@@ -14,7 +14,7 @@ create type subscription_status as enum (
 create type entry_category as enum (
   'pipe',
   'cigar',
-  'whiskey'
+  'spirits'
 );
 
 create type collection_category as enum (
@@ -23,6 +23,26 @@ create type collection_category as enum (
   'cigar',
   'bottle',
   'lighter'
+);
+
+create type catalog_type as enum (
+  'pipes',
+  'pipe_tobaccos',
+  'cigars',
+  'spirits'
+);
+
+create type catalog_status as enum (
+  'active',
+  'discontinued',
+  'limited',
+  'seasonal'
+);
+
+create type catalog_source as enum (
+  'seed',
+  'user',
+  'promoted'
 );
 
 create table app_user (
@@ -43,6 +63,69 @@ create table user_profile (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+create table catalog_brand (
+  id uuid primary key default gen_random_uuid(),
+  catalog_type catalog_type not null,
+  name text not null,
+  normalized_name text not null,
+  aliases jsonb not null default '[]'::jsonb,
+  status catalog_status not null default 'active',
+  source catalog_source not null default 'seed',
+  country text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create unique index catalog_brand_type_name_idx
+  on catalog_brand(catalog_type, normalized_name);
+
+create table catalog_item (
+  id uuid primary key default gen_random_uuid(),
+  catalog_type catalog_type not null,
+  brand_id uuid references catalog_brand(id) on delete set null,
+  name text not null,
+  normalized_name text not null,
+  aliases jsonb not null default '[]'::jsonb,
+  status catalog_status not null default 'active',
+  source catalog_source not null default 'seed',
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create unique index catalog_item_type_brand_name_idx
+  on catalog_item(catalog_type, coalesce(brand_id, '00000000-0000-0000-0000-000000000000'::uuid), normalized_name);
+
+create table user_catalog_item (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references app_user(id) on delete cascade,
+  catalog_type catalog_type not null,
+  brand_name text,
+  item_name text not null,
+  normalized_item_name text not null,
+  metadata jsonb not null default '{}'::jsonb,
+  promoted_catalog_item_id uuid references catalog_item(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index user_catalog_item_user_type_idx on user_catalog_item(user_id, catalog_type);
+create index user_catalog_item_user_name_idx on user_catalog_item(user_id, normalized_item_name);
+
+create table user_catalog_brand (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references app_user(id) on delete cascade,
+  catalog_type catalog_type not null,
+  name text not null,
+  normalized_name text not null,
+  aliases jsonb not null default '[]'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index user_catalog_brand_user_type_idx on user_catalog_brand(user_id, catalog_type);
+create unique index user_catalog_brand_user_name_idx on user_catalog_brand(user_id, catalog_type, normalized_name);
 
 create table billing_customer (
   id uuid primary key default gen_random_uuid(),
@@ -82,6 +165,7 @@ create table journal_entry (
   use_final_override boolean not null default false,
   overall_thoughts text,
   quick_notes text,
+  catalog_refs jsonb not null default '{}'::jsonb,
   detail jsonb not null default '{}'::jsonb,
   search_document tsvector,
   created_at timestamptz not null default now(),

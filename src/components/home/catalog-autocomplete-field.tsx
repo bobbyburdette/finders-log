@@ -37,6 +37,17 @@ export function CatalogAutocompleteField({
   );
   const hasExactSuggestion = normalizedLabels.includes(trimmedValue.toLowerCase());
 
+  function selectSuggestion(suggestion: CatalogSuggestion) {
+    onSelect(suggestion);
+    setIsFocused(false);
+  }
+
+  function createCustomValue() {
+    if (!onCreateCustom) return;
+    onCreateCustom(trimmedValue);
+    setIsFocused(false);
+  }
+
   return (
     <div className="field">
       <label>
@@ -60,14 +71,14 @@ export function CatalogAutocompleteField({
               key={suggestion.id}
               className="catalog-option"
               type="button"
-              onClick={() => onSelect(suggestion)}
+              onPointerDown={(event) => {
+                event.preventDefault();
+                selectSuggestion(suggestion);
+              }}
             >
               <span className="catalog-option-main">
                 <span className="catalog-option-label">{suggestion.label}</span>
                 {suggestion.detail ? <span className="catalog-option-detail">{suggestion.detail}</span> : null}
-              </span>
-              <span className={suggestion.source === "seed" ? "catalog-badge" : "catalog-badge user"}>
-                {suggestion.source === "seed" ? "Library" : "Yours"}
               </span>
             </button>
           ))}
@@ -76,7 +87,10 @@ export function CatalogAutocompleteField({
             <button
               className="catalog-option catalog-option-add"
               type="button"
-              onClick={() => onCreateCustom(trimmedValue)}
+              onPointerDown={(event) => {
+                event.preventDefault();
+                createCustomValue();
+              }}
             >
               <span className="catalog-option-main">
                 <span className="catalog-option-label">
@@ -84,7 +98,6 @@ export function CatalogAutocompleteField({
                 </span>
                 <span className="catalog-option-detail">Save this to your personal catalog</span>
               </span>
-              <span className="catalog-badge user">Custom</span>
             </button>
           ) : null}
         </div>

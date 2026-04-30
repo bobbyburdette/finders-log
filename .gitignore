@@ -3,9 +3,12 @@ node_modules
 *.log
 dist
 coverage
+.env.local
+.env*.local
 .DS_Store
 .claude/
 .webp
 *.zip
+tsconfig.tsbuildinfo
 Playfair_Display/
 Crimson_Pro,Playfair_Display/

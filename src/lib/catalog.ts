@@ -36,6 +36,8 @@ export interface CigarMetadata {
   wrapper?: string;
   binder?: string;
   filler?: string;
+  countryFactory?: string;
+  wrapperShade?: string;
 }
 
 export interface SpiritMetadata {
@@ -43,6 +45,10 @@ export interface SpiritMetadata {
   expression?: string;
   proof?: number;
   ageStatement?: string;
+  mashbill?: string;
+  barrelTypeFinish?: string;
+  batchBarrelNumber?: string;
+  price?: string;
 }
 
 export type CatalogItemMetadata =
@@ -140,6 +146,20 @@ export function getBrandNameById(store: CatalogStore, brandId: string | null) {
   return store.brands.find((brand) => brand.id === brandId)?.name ?? "";
 }
 
+export function getBrandById(store: CatalogStore, brandId: string | null) {
+  if (!brandId) return null;
+  return store.brands.find((brand) => brand.id === brandId) ?? null;
+}
+
+export function getItemById(store: CatalogStore, itemId: string) {
+  return store.items.find((item) => item.id === itemId) ?? null;
+}
+
+export function getCatalogItemDisplayName(store: CatalogStore, item: CatalogItem) {
+  const brandName = getBrandNameById(store, item.brandId);
+  return brandName ? `${brandName} ${item.name}` : item.name;
+}
+
 export function searchBrands(
   store: CatalogStore,
   type: CatalogType,
@@ -173,7 +193,11 @@ export function searchItems(
   return store.items
     .filter((item) => item.type === type)
     .filter((item) => options?.brandId == null || item.brandId === options.brandId)
-    .filter((item) => catalogRecordMatches(query, item.name, item.aliases))
+    .filter((item) => {
+      const brand = getBrandById(store, item.brandId);
+      const brandTerms = brand ? [brand.name, ...brand.aliases] : [];
+      return catalogRecordMatches(query, item.name, [...item.aliases, ...brandTerms]);
+    })
     .sort((a, b) => {
       if (a.source !== b.source) return a.source === "seed" ? -1 : 1;
       return a.name.localeCompare(b.name);
