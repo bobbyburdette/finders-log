@@ -1279,12 +1279,19 @@ export function HomeShell() {
 
     async function loadRemoteState() {
       try {
-        const [remoteEntries, remoteDraft, remoteUserCatalog, remoteCollection] = await Promise.all([
+        const [entriesResult, draftResult, catalogResult, collectionResult] = await Promise.allSettled([
           fetchRemotePipeEntries(),
           fetchRemotePipeDraft(),
           fetchRemoteUserCatalog(),
           fetchRemoteCollectionState()
         ]);
+
+        const remoteEntries = entriesResult.status === "fulfilled" ? entriesResult.value : [];
+        const remoteDraft = draftResult.status === "fulfilled" ? draftResult.value : null;
+        const remoteUserCatalog =
+          catalogResult.status === "fulfilled" ? catalogResult.value : { brands: [], items: [] };
+        const remoteCollection =
+          collectionResult.status === "fulfilled" ? collectionResult.value : emptyCollectionState();
 
         if (cancelled) return;
 
@@ -1346,8 +1353,17 @@ export function HomeShell() {
           setCollectionWishlistBottles(emptyState.wishlistBottles);
         }
 
+        const syncFailures = [
+          entriesResult.status === "rejected" ? "journal entries" : null,
+          draftResult.status === "rejected" ? "drafts" : null,
+          catalogResult.status === "rejected" ? "personal catalog" : null,
+          collectionResult.status === "rejected" ? "collection" : null
+        ].filter((value): value is string => Boolean(value));
+
         setRemoteReady(true);
-        if (remoteHasAnyData) {
+        if (syncFailures.length) {
+          setSyncNotice(`Your profile is connected. I still need to finish syncing: ${syncFailures.join(", ")}.`);
+        } else if (remoteHasAnyData) {
           setSyncNotice("Your profile is connected. This journal can now follow you across devices.");
         } else if (localHasAnyData) {
           setSyncNotice("Your profile is connected. Your current journal is ready to back up.");
