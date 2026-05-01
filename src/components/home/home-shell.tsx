@@ -1407,9 +1407,17 @@ export function HomeShell() {
     }
 
     if (!isSupabaseMode || !authUserId || !remoteReady) return;
+    const draftHasMeaningfulData = hasDraftData(draft);
 
     if (syncTimeoutRef.current) {
       window.clearTimeout(syncTimeoutRef.current);
+    }
+
+    if (!draftHasMeaningfulData) {
+      if (syncNotice === "I couldn't save that draft to your profile yet.") {
+        setSyncNotice("Your profile is connected. This journal can now follow you across devices.");
+      }
+      return;
     }
 
     syncTimeoutRef.current = window.setTimeout(() => {
