@@ -847,6 +847,71 @@ textarea {
   border-top: none;
 }
 
+.profile-auth-panel,
+.profile-account-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.social-auth-btn {
+  min-height: 52px;
+  border: 1px solid rgba(196, 164, 92, 0.38);
+  border-radius: 1px;
+  background: rgba(9, 7, 5, 0.84);
+  color: var(--cream);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 17px;
+  transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
+}
+
+.social-auth-btn:hover {
+  border-color: var(--gold);
+  background: rgba(196, 164, 92, 0.08);
+}
+
+.social-auth-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.social-auth-mark {
+  width: 24px;
+  height: 24px;
+  border: 1px solid rgba(196, 164, 92, 0.45);
+  border-radius: 50%;
+  color: var(--gold);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: Georgia, serif;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.auth-divider {
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 1.4px;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.profile-account-row {
+  padding: 0 0 12px;
+  border-bottom: 1px solid rgba(92, 70, 39, 0.45);
+}
+
+.profile-account-row:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
 .profile-section {
   margin-top: 18px;
 }
@@ -871,6 +936,11 @@ textarea {
   color: var(--cream);
   font-size: 16px;
   line-height: 1.65;
+}
+
+.profile-signout-section {
+  padding: 18px 18px 24px;
+  border-top: 1px solid rgba(196, 164, 92, 0.28);
 }
 
 .back-img-btn {

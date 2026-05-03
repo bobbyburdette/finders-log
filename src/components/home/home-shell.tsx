@@ -1836,6 +1836,30 @@ export function HomeShell() {
     }
   }
 
+  async function signInWithProvider(provider: "google" | "apple" | "facebook") {
+    setAuthBusy(true);
+    setAuthNotice(null);
+
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const redirectUrl = getAuthCallbackUrl() || `${window.location.origin}/auth/callback`;
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: redirectUrl
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+    } catch (error) {
+      console.error(`Failed to start ${provider} sign-in`, error);
+      setAuthNotice(error instanceof Error ? error.message : "I couldn't start that sign-in method yet.");
+      setAuthBusy(false);
+    }
+  }
+
   async function signOutOfCloud() {
     setAuthBusy(true);
     setAuthNotice(null);
@@ -4150,12 +4174,12 @@ export function HomeShell() {
             </header>
 
             <section className="profile-hero">
-              <div className="profile-kicker">{authUserId ? "Your Profile" : "Save Your Journal"}</div>
-              <h1 className="profile-title">{authUserId ? "Journal Backup Is On" : "Create your profile"}</h1>
+              <div className="profile-kicker">{authUserId ? "Your Profile" : "Account"}</div>
+              <h1 className="profile-title">{authUserId ? "Your profile" : "Sign in to your profile"}</h1>
               <p className="profile-copy">
                 {authUserId
-                  ? `Signed in as ${authUserEmail ?? "your profile"}. ${syncNotice ?? "Your journal can now sync across devices."}`
-                  : "Back up entries, save drafts, and keep your personal catalog with you across devices."}
+                  ? "Your journal is saved to your profile and can follow you across devices."
+                  : "Use your profile to save your journal and access it across devices."}
               </p>
             </section>
 
@@ -4176,22 +4200,40 @@ export function HomeShell() {
 
             <section className="cloud-strip profile-cloud-strip">
               {authUserId ? (
-                <div className="cloud-strip-actions">
-                  <button className="cloud-secondary-btn" type="button" onClick={() => void signOutOfCloud()} disabled={authBusy}>
-                    {authBusy ? "Working..." : "Sign Out"}
-                  </button>
+                <div className="profile-account-panel">
+                  <div className="profile-account-row">
+                    <span className="detail-label">Email</span>
+                    <span className="detail-value">{authUserEmail ?? "Profile connected"}</span>
+                  </div>
+                  <div className="profile-account-row">
+                    <span className="detail-label">Status</span>
+                    <span className="detail-value">Signed in</span>
+                  </div>
                 </div>
               ) : (
-                <div className="cloud-strip-actions">
+                <div className="profile-auth-panel">
+                  <button className="social-auth-btn" type="button" onClick={() => void signInWithProvider("google")} disabled={authBusy}>
+                    <span className="social-auth-mark">G</span>
+                    Continue with Google
+                  </button>
+                  <button className="social-auth-btn" type="button" onClick={() => void signInWithProvider("apple")} disabled={authBusy}>
+                    <span className="social-auth-mark">A</span>
+                    Continue with Apple
+                  </button>
+                  <button className="social-auth-btn" type="button" onClick={() => void signInWithProvider("facebook")} disabled={authBusy}>
+                    <span className="social-auth-mark">f</span>
+                    Continue with Facebook
+                  </button>
+                  <div className="auth-divider">or continue with email</div>
                   <input
                     className="cloud-email-input"
                     type="email"
-                    placeholder="Your email"
+                    placeholder="Email address"
                     value={authEmailInput}
                     onChange={(event) => setAuthEmailInput(event.target.value)}
                   />
                   <button className="cloud-primary-btn" type="button" onClick={() => void sendMagicLink()} disabled={authBusy}>
-                    {authBusy ? "Sending..." : "Create Profile"}
+                    {authBusy ? "Sending..." : "Send Sign-In Link"}
                   </button>
                 </div>
               )}
@@ -4202,44 +4244,29 @@ export function HomeShell() {
             <section className="form-section profile-section">
               <div className="section-title">
                 <img className="section-title-icon" src="/settingsbtn.png" alt="" />
-                Journal Status
+                Account
               </div>
               <div className="profile-settings-list">
                 <div className="profile-setting-row">
-                  <span className="detail-label">Journal Status</span>
-                  <span className="detail-value">{authUserId ? "Backed up to your profile" : "Saved locally on this device"}</span>
+                  <span className="detail-label">Email</span>
+                  <span className="detail-value">{authUserId ? authUserEmail ?? "Profile connected" : "Not signed in"}</span>
                 </div>
                 <div className="profile-setting-row">
-                  <span className="detail-label">Sync</span>
-                  <span className="detail-value">{syncNotice ?? "Standing by"}</span>
+                  <span className="detail-label">Journal</span>
+                  <span className="detail-value">{authUserId ? "Saved to your profile" : "Saved locally on this device"}</span>
                 </div>
                 <div className="profile-setting-row">
-                  <span className="detail-label">Account</span>
-                  <span className="detail-value">{authUserId ? authUserEmail ?? "Profile connected" : "No profile connected yet"}</span>
+                  <span className="detail-label">Settings</span>
+                  <span className="detail-value">Preferences coming soon</span>
                 </div>
               </div>
             </section>
 
-            {!authUserId ? (
-              <section className="form-section profile-section">
-                <div className="section-title">
-                  <img className="section-title-icon" src="/settingsbtn.png" alt="" />
-                  Why Create A Profile
-                </div>
-                <div className="profile-benefits">
-                  <div className="profile-benefit">
-                    <div className="detail-label">Back up your journal</div>
-                    <p>Your entries stay safe even if you switch browsers or devices.</p>
-                  </div>
-                  <div className="profile-benefit">
-                    <div className="detail-label">Keep your personal catalog</div>
-                    <p>Custom blends, pipes, and future categories can follow you automatically.</p>
-                  </div>
-                  <div className="profile-benefit">
-                    <div className="detail-label">Pick up where you left off</div>
-                    <p>Drafts and saved sessions can be waiting for you when you come back.</p>
-                  </div>
-                </div>
+            {authUserId ? (
+              <section className="profile-signout-section">
+                <button className="cloud-secondary-btn" type="button" onClick={() => void signOutOfCloud()} disabled={authBusy}>
+                  {authBusy ? "Working..." : "Sign Out"}
+                </button>
               </section>
             ) : null}
           </section>
