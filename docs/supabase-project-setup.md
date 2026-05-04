@@ -61,6 +61,23 @@ This SQL file is designed for Supabase specifically. It:
 6. Switch the provider to `supabase`
 7. Check backend status route
 
+## Social Login Redirects
+
+In Supabase, enable each social provider you want to show in the app:
+
+- Google
+- Apple
+- Facebook
+
+Add these redirect URLs in the Supabase auth URL configuration:
+
+- `http://localhost:3000/auth/callback`
+- `http://localhost:3001/auth/callback` if local dev moves to port `3001`
+- your hosted preview callback URL
+- your production callback URL
+
+The app sends users back to `/auth/callback?next=/?auth=profile` after social login or email magic-link login. The callback exchanges the Supabase auth code, returns the user to the profile screen, and displays provider errors there if Supabase sends one back.
+
 ## How To Tell If It Is Working
 
 This route should help once env is filled in:

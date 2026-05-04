@@ -47,6 +47,28 @@ type CollectionFormKind = "cigar" | "tobacco" | "pipe" | "bottle";
 type CollectionDetailKind = CollectionFormKind;
 
 type CollectionWishlistKind = "cigar" | "pipe" | "bottle";
+type SocialAuthProvider = "google" | "apple" | "facebook";
+
+const socialAuthProviders: Array<{
+  provider: SocialAuthProvider;
+  label: string;
+  mark: string;
+}> = [
+  { provider: "google", label: "Continue with Google", mark: "G" },
+  { provider: "apple", label: "Continue with Apple", mark: "A" },
+  { provider: "facebook", label: "Continue with Facebook", mark: "f" }
+];
+
+function getProfileAuthRedirectUrl() {
+  const fallbackOrigin = "http://localhost:3000";
+  const currentOrigin = typeof window !== "undefined" ? window.location.origin : "";
+  const callbackUrl = currentOrigin ? `${currentOrigin}/auth/callback` : getAuthCallbackUrl() || `${fallbackOrigin}/auth/callback`;
+  const redirectUrl = new URL(callbackUrl, fallbackOrigin);
+
+  redirectUrl.searchParams.set("next", "/?auth=profile");
+
+  return redirectUrl.toString();
+}
 
 const pickerItems: Array<{
   key: Category;
@@ -725,6 +747,30 @@ export function HomeShell() {
       entryMode: "quick" as EntryMode
     }
   });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const searchParams = new URLSearchParams(window.location.search);
+    const authTarget = searchParams.get("auth");
+    const authError = searchParams.get("auth_error");
+
+    if (authTarget === "profile" || authError) {
+      setView("profile");
+    }
+
+    if (authError) {
+      setAuthNotice(authError);
+    }
+
+    if (authTarget || authError) {
+      searchParams.delete("auth");
+      searchParams.delete("auth_error");
+      const cleanQuery = searchParams.toString();
+      const cleanUrl = `${window.location.pathname}${cleanQuery ? `?${cleanQuery}` : ""}${window.location.hash}`;
+      window.history.replaceState({}, "", cleanUrl);
+    }
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1815,11 +1861,10 @@ export function HomeShell() {
 
     try {
       const supabase = createSupabaseBrowserClient();
-      const redirectUrl = getAuthCallbackUrl() || `${window.location.origin}/auth/callback`;
       const { error } = await supabase.auth.signInWithOtp({
         email: authEmailInput.trim(),
         options: {
-          emailRedirectTo: redirectUrl
+          emailRedirectTo: getProfileAuthRedirectUrl()
         }
       });
 
@@ -1836,23 +1881,24 @@ export function HomeShell() {
     }
   }
 
-  async function signInWithProvider(provider: "google" | "apple" | "facebook") {
+  async function signInWithProvider(provider: SocialAuthProvider) {
     setAuthBusy(true);
     setAuthNotice(null);
 
     try {
       const supabase = createSupabaseBrowserClient();
-      const redirectUrl = getAuthCallbackUrl() || `${window.location.origin}/auth/callback`;
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: redirectUrl
+          redirectTo: getProfileAuthRedirectUrl()
         }
       });
 
       if (error) {
         throw error;
       }
+
+      setAuthNotice("Taking you to your sign-in provider...");
     } catch (error) {
       console.error(`Failed to start ${provider} sign-in`, error);
       setAuthNotice(error instanceof Error ? error.message : "I couldn't start that sign-in method yet.");
@@ -4212,18 +4258,18 @@ export function HomeShell() {
                 </div>
               ) : (
                 <div className="profile-auth-panel">
-                  <button className="social-auth-btn" type="button" onClick={() => void signInWithProvider("google")} disabled={authBusy}>
-                    <span className="social-auth-mark">G</span>
-                    Continue with Google
-                  </button>
-                  <button className="social-auth-btn" type="button" onClick={() => void signInWithProvider("apple")} disabled={authBusy}>
-                    <span className="social-auth-mark">A</span>
-                    Continue with Apple
-                  </button>
-                  <button className="social-auth-btn" type="button" onClick={() => void signInWithProvider("facebook")} disabled={authBusy}>
-                    <span className="social-auth-mark">f</span>
-                    Continue with Facebook
-                  </button>
+                  {socialAuthProviders.map((provider) => (
+                    <button
+                      key={provider.provider}
+                      className="social-auth-btn"
+                      type="button"
+                      onClick={() => void signInWithProvider(provider.provider)}
+                      disabled={authBusy}
+                    >
+                      <span className="social-auth-mark">{provider.mark}</span>
+                      {provider.label}
+                    </button>
+                  ))}
                   <div className="auth-divider">or continue with email</div>
                   <input
                     className="cloud-email-input"
