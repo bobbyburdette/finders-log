@@ -1863,30 +1863,32 @@ textarea {
 
 .bottom-nav {
   position: fixed;
+  left: 0;
   right: 0;
   bottom: 0;
-  left: 0;
   z-index: 150;
-  display: flex;
-  max-width: 480px;
-  margin: 0 auto;
-  align-items: center;
-  justify-content: space-around;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: end;
+  width: 100%;
   border-top: 1px solid var(--border2);
-  border-left: 1px solid var(--border2);
-  border-right: 1px solid var(--border2);
   background: rgba(10, 8, 6, 0.97);
-  padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+  padding:
+    8px
+    max(16px, env(safe-area-inset-right))
+    calc(8px + env(safe-area-inset-bottom))
+    max(16px, env(safe-area-inset-left));
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
 
 .bn-tab {
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 5px;
+  width: 100%;
   border: none;
   background: none;
   color: var(--muted);
@@ -1894,7 +1896,7 @@ textarea {
   font-size: 10px;
   letter-spacing: 1.2px;
   text-transform: uppercase;
-  padding: 4px 0;
+  padding: 4px 12px;
 }
 
 .bn-tab.active {
@@ -1906,7 +1908,6 @@ textarea {
 }
 
 .bn-log {
-  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1916,6 +1917,7 @@ textarea {
   border: none;
   background: none;
   cursor: pointer;
+  justify-self: center;
 }
 
 .bn-log-circle {
@@ -1948,9 +1950,8 @@ textarea {
 
 @media (min-width: 768px) {
   .bottom-nav {
-    left: 50%;
-    right: auto;
-    transform: translateX(-50%);
+    padding-left: 24px;
+    padding-right: 24px;
   }
 }
 
