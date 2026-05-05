@@ -1596,7 +1596,7 @@ export function HomeShell() {
   }, [isHydrated, spiritEntries]);
 
   useEffect(() => {
-    if (!isHydrated || !isSupabaseMode || !authUserId || !remoteReady) return;
+    if (!isHydrated || !isSupabaseMode || !authUserId) return;
 
     void saveRemoteJournalEntries([...pipeEntries, ...cigarEntries, ...spiritEntries])
       .then(() => setSyncNotice("Journal saved to your profile."))
@@ -1604,7 +1604,7 @@ export function HomeShell() {
         console.error("Failed to sync remote journal entries", error);
         setSyncNotice("I couldn't save your journal changes yet.");
       });
-  }, [authUserId, cigarEntries, isHydrated, isSupabaseMode, pipeEntries, remoteReady, spiritEntries]);
+  }, [authUserId, cigarEntries, isHydrated, isSupabaseMode, pipeEntries, spiritEntries]);
 
   useEffect(() => {
     if (!isHydrated) return;
@@ -4361,6 +4361,7 @@ export function HomeShell() {
               )}
 
               {authNotice ? <div className="cloud-strip-note">{authNotice}</div> : null}
+              {syncNotice ? <div className="cloud-strip-note">{syncNotice}</div> : null}
             </section>
 
             <section className="form-section profile-section">
