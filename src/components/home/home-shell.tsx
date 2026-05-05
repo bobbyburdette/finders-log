@@ -1011,6 +1011,7 @@ export function HomeShell() {
   const selectedPipeEntryIsFull = selectedPipeEntry ? (selectedPipeEntry.entryMode ? selectedPipeEntry.entryMode === "full" : isPipeEntryFull(selectedPipeEntry)) : false;
   const selectedCigarEntryIsFull = selectedCigarEntry ? (selectedCigarEntry.entryMode ? selectedCigarEntry.entryMode === "full" : isCigarEntryFull(selectedCigarEntry)) : false;
   const selectedSpiritEntryIsFull = selectedSpiritEntry ? (selectedSpiritEntry.entryMode ? selectedSpiritEntry.entryMode === "full" : isSpiritEntryFull(selectedSpiritEntry)) : false;
+  const journalEntryCount = pipeEntries.length + cigarEntries.length + spiritEntries.length;
   const favoriteCount = useMemo(
     () => [...pipeEntries, ...cigarEntries, ...spiritEntries].filter((entry) => entry.isFavorite).length,
     [cigarEntries, pipeEntries, spiritEntries]
@@ -4267,14 +4268,16 @@ export function HomeShell() {
               <p className="profile-copy">
                 {authUserId
                   ? "Your journal is saved to your profile and can follow you across devices."
-                  : "Use your profile to save your journal and access it across devices."}
+                  : journalEntryCount > 0
+                    ? "These entries are saved on this device. Sign in to move them into your profile."
+                    : "Use your profile to save your journal and access it across devices."}
               </p>
             </section>
 
             <section className="profile-stats">
               <article className="profile-stat-card">
-                <div className="profile-stat-value">{pipeEntries.length + cigarEntries.length + spiritEntries.length}</div>
-                <div className="profile-stat-label">Journal Entries</div>
+                <div className="profile-stat-value">{journalEntryCount}</div>
+                <div className="profile-stat-label">{authUserId ? "Journal Entries" : "Device Entries"}</div>
               </article>
               <article className="profile-stat-card">
                 <div className="profile-stat-value">{favoriteCount}</div>
@@ -4300,6 +4303,11 @@ export function HomeShell() {
                 </div>
               ) : (
                 <div className="profile-auth-panel">
+                  {journalEntryCount > 0 ? (
+                    <div className="cloud-strip-note">
+                      Sign in on this device to add these entries to your profile.
+                    </div>
+                  ) : null}
                   {socialAuthProviders.map((provider) => (
                     <button
                       key={provider.provider}
