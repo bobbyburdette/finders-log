@@ -1729,6 +1729,23 @@ export function HomeShell() {
     setSpiritForm((current) => ({ ...current, [key]: value }));
   }
 
+  function syncJournalEntriesToProfile(
+    nextPipeEntries = pipeEntries,
+    nextCigarEntries = cigarEntries,
+    nextSpiritEntries = spiritEntries
+  ) {
+    if (!isSupabaseMode || !authUserId) return;
+
+    setSyncNotice("Saving your journal to your profile...");
+
+    void saveRemoteJournalEntries([...nextPipeEntries, ...nextCigarEntries, ...nextSpiritEntries])
+      .then(() => setSyncNotice("Journal saved to your profile."))
+      .catch((error) => {
+        console.error("Failed to save journal to profile", error);
+        setSyncNotice("I couldn't save your journal changes yet.");
+      });
+  }
+
   function resetPipeDraft() {
     setPipeForm(defaultPipeForm);
     setPipeTimeOfDay("Evening");
@@ -2840,9 +2857,12 @@ export function HomeShell() {
     };
 
     setUserCatalog(nextUserCatalog);
-    setPipeEntries((current) =>
-      existingEntry ? current.map((item) => (item.id === existingEntry.id ? entry : item)) : [entry, ...current]
-    );
+    const nextPipeEntries = existingEntry
+      ? pipeEntries.map((item) => (item.id === existingEntry.id ? entry : item))
+      : [entry, ...pipeEntries];
+
+    setPipeEntries(nextPipeEntries);
+    syncJournalEntriesToProfile(nextPipeEntries, cigarEntries, spiritEntries);
     setSelectedPipeEntryId(entry.id);
     resetPipeDraft();
     setView(existingEntry ? "detail" : "home");
@@ -2948,9 +2968,12 @@ export function HomeShell() {
     };
 
     setUserCatalog(nextUserCatalog);
-    setCigarEntries((current) =>
-      existingEntry ? current.map((item) => (item.id === existingEntry.id ? entry : item)) : [entry, ...current]
-    );
+    const nextCigarEntries = existingEntry
+      ? cigarEntries.map((item) => (item.id === existingEntry.id ? entry : item))
+      : [entry, ...cigarEntries];
+
+    setCigarEntries(nextCigarEntries);
+    syncJournalEntriesToProfile(pipeEntries, nextCigarEntries, spiritEntries);
     setSelectedCigarEntryId(entry.id);
     resetCigarDraft();
     setView(existingEntry ? "detail" : "home");
@@ -3048,9 +3071,12 @@ export function HomeShell() {
     };
 
     setUserCatalog(nextUserCatalog);
-    setSpiritEntries((current) =>
-      existingEntry ? current.map((item) => (item.id === existingEntry.id ? entry : item)) : [entry, ...current]
-    );
+    const nextSpiritEntries = existingEntry
+      ? spiritEntries.map((item) => (item.id === existingEntry.id ? entry : item))
+      : [entry, ...spiritEntries];
+
+    setSpiritEntries(nextSpiritEntries);
+    syncJournalEntriesToProfile(pipeEntries, cigarEntries, nextSpiritEntries);
     setSelectedSpiritEntryId(entry.id);
     resetSpiritDraft();
     setView(existingEntry ? "detail" : "home");

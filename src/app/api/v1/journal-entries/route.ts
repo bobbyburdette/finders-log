@@ -39,33 +39,6 @@ export async function PUT(request: Request) {
     return jsonError("Journal entries payload must include an entries array.", 400);
   }
 
-  const incomingIds = entries.map((entry) => entry.id);
-
-  const { data: existingRows, error: existingError } = await auth.supabase
-    .from("journal_entry")
-    .select("id")
-    .eq("user_id", auth.userId)
-    .in("category", ["pipe", "cigar", "spirits"]);
-
-  if (existingError) {
-    return jsonError("Failed to inspect existing journal entries.", 500, { detail: existingError.message });
-  }
-
-  const existingIds = (existingRows ?? []).map((row) => row.id as string);
-  const idsToDelete = existingIds.filter((id) => !incomingIds.includes(id));
-
-  if (idsToDelete.length) {
-    const { error: deleteError } = await auth.supabase
-      .from("journal_entry")
-      .delete()
-      .eq("user_id", auth.userId)
-      .in("id", idsToDelete);
-
-    if (deleteError) {
-      return jsonError("Failed to remove old journal entries.", 500, { detail: deleteError.message });
-    }
-  }
-
   if (entries.length) {
     const payload = entries.map((entry) => mapEntryToJournalEntryRow(auth.userId, entry));
     const { error: upsertError } = await auth.supabase.from("journal_entry").upsert(payload, { onConflict: "id" });
