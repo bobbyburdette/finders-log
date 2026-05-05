@@ -60,6 +60,14 @@ function ensureCloudSafeEntryIds<T extends JournalEntry>(entries: T[]) {
   return entries.map((entry) => (isUuid(entry.id) ? entry : { ...entry, id: createJournalEntryId() }));
 }
 
+function mergeEntriesById<T extends JournalEntry>(remoteEntries: T[], localEntries: T[]) {
+  const seenIds = new Set(remoteEntries.map((entry) => entry.id));
+
+  return [...remoteEntries, ...localEntries.filter((entry) => !seenIds.has(entry.id))].sort((a, b) =>
+    (b.date || b.createdAt).localeCompare(a.date || a.createdAt)
+  );
+}
+
 const socialAuthProviders: Array<{
   provider: SocialAuthProvider;
   label: string;
@@ -1372,10 +1380,10 @@ export function HomeShell() {
         const remoteHasAnyData = remoteHasEntries || remoteHasDraft || remoteHasCatalog || remoteHasCollection;
         const localHasAnyData = localHasEntries || localHasDraft || localHasCatalog || localHasCollection;
 
-        if (remoteHasEntries) {
-          setPipeEntries(remotePipeEntries);
-          setCigarEntries(remoteCigarEntries);
-          setSpiritEntries(remoteSpiritEntries);
+        if (remoteHasEntries || localHasEntries) {
+          setPipeEntries(mergeEntriesById(remotePipeEntries, localState.pipeEntries));
+          setCigarEntries(mergeEntriesById(remoteCigarEntries, localState.cigarEntries));
+          setSpiritEntries(mergeEntriesById(remoteSpiritEntries, localState.spiritEntries));
         } else if (!localHasEntries) {
           setPipeEntries([]);
           setCigarEntries([]);
