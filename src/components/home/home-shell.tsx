@@ -29,10 +29,9 @@ import { defaultSpiritForm, type SpiritDraftState, type SpiritEntry, type Spirit
 import {
   clearRemotePipeDraft,
   fetchRemotePipeDraft,
-  fetchRemotePipeEntries,
-  saveRemotePipeDraft,
-  saveRemotePipeEntries
+  saveRemotePipeDraft
 } from "@/lib/services/remote/pipe-entry-service";
+import { fetchRemoteJournalEntries, saveRemoteJournalEntries } from "@/lib/services/remote/journal-entry-service";
 import { fetchRemoteUserCatalog, saveRemoteUserCatalog } from "@/lib/services/remote/catalog-service";
 import { fetchRemoteCollectionState, saveRemoteCollectionState } from "@/lib/services/remote/collection-service";
 import { appServices } from "@/lib/services/service-factory";
@@ -48,6 +47,18 @@ type CollectionDetailKind = CollectionFormKind;
 
 type CollectionWishlistKind = "cigar" | "pipe" | "bottle";
 type SocialAuthProvider = "google" | "apple" | "facebook";
+
+function createJournalEntryId() {
+  return crypto.randomUUID();
+}
+
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+function ensureCloudSafeEntryIds<T extends JournalEntry>(entries: T[]) {
+  return entries.map((entry) => (isUuid(entry.id) ? entry : { ...entry, id: createJournalEntryId() }));
+}
 
 const socialAuthProviders: Array<{
   provider: SocialAuthProvider;
@@ -734,6 +745,8 @@ export function HomeShell() {
   const syncTimeoutRef = useRef<number | null>(null);
   const latestLocalStateRef = useRef({
     pipeEntries: [] as PipeEntry[],
+    cigarEntries: [] as CigarEntry[],
+    spiritEntries: [] as SpiritEntry[],
     userCatalog: { brands: [], items: [] } as CatalogStore,
     collection: emptyCollectionState(),
     draft: {
@@ -1154,19 +1167,19 @@ export function HomeShell() {
     setIsHydrated(true);
 
     try {
-      setPipeEntries(pipeEntryService.loadEntries());
+      setPipeEntries(ensureCloudSafeEntryIds(pipeEntryService.loadEntries()));
     } catch (error) {
       console.error("Failed to load saved pipe entries", error);
     }
 
     try {
-      setCigarEntries(browserPipeJournalRepository.loadCigarEntries());
+      setCigarEntries(ensureCloudSafeEntryIds(browserPipeJournalRepository.loadCigarEntries()));
     } catch (error) {
       console.error("Failed to load saved cigar entries", error);
     }
 
     try {
-      setSpiritEntries(browserPipeJournalRepository.loadSpiritEntries());
+      setSpiritEntries(ensureCloudSafeEntryIds(browserPipeJournalRepository.loadSpiritEntries()));
     } catch (error) {
       console.error("Failed to load saved spirit entries", error);
     }
@@ -1294,6 +1307,8 @@ export function HomeShell() {
   useEffect(() => {
     latestLocalStateRef.current = {
       pipeEntries,
+      cigarEntries,
+      spiritEntries,
       userCatalog,
       collection: {
         cigars: collectionCigars,
@@ -1315,7 +1330,7 @@ export function HomeShell() {
         entryMode
       }
     };
-  }, [collectionBottles, collectionCigars, collectionPipes, collectionTobaccos, collectionWishlistBottles, collectionWishlistCigars, collectionWishlistPipes, entryMode, pipeBlendType, pipeComponents, pipeCutType, pipeEntries, pipeForm, pipeNicotineStrength, pipeRatings, pipeTimeOfDay, userCatalog]);
+  }, [cigarEntries, collectionBottles, collectionCigars, collectionPipes, collectionTobaccos, collectionWishlistBottles, collectionWishlistCigars, collectionWishlistPipes, entryMode, pipeBlendType, pipeComponents, pipeCutType, pipeEntries, pipeForm, pipeNicotineStrength, pipeRatings, pipeTimeOfDay, spiritEntries, userCatalog]);
 
   useEffect(() => {
     if (!isSupabaseMode || !isHydrated || !authUserId) return;
@@ -1326,13 +1341,16 @@ export function HomeShell() {
     async function loadRemoteState() {
       try {
         const [entriesResult, draftResult, catalogResult, collectionResult] = await Promise.allSettled([
-          fetchRemotePipeEntries(),
+          fetchRemoteJournalEntries(),
           fetchRemotePipeDraft(),
           fetchRemoteUserCatalog(),
           fetchRemoteCollectionState()
         ]);
 
         const remoteEntries = entriesResult.status === "fulfilled" ? entriesResult.value : [];
+        const remotePipeEntries = remoteEntries.filter((entry): entry is PipeEntry => entry.category === "pipe");
+        const remoteCigarEntries = remoteEntries.filter((entry): entry is CigarEntry => entry.category === "cigar");
+        const remoteSpiritEntries = remoteEntries.filter((entry): entry is SpiritEntry => entry.category === "spirits");
         const remoteDraft = draftResult.status === "fulfilled" ? draftResult.value : null;
         const remoteUserCatalog =
           catalogResult.status === "fulfilled" ? catalogResult.value : { brands: [], items: [] };
@@ -1346,7 +1364,8 @@ export function HomeShell() {
         const remoteHasDraft = Boolean(remoteDraft);
         const remoteHasCatalog = hasCatalogData(remoteUserCatalog);
         const remoteHasCollection = hasCollectionData(remoteCollection);
-        const localHasEntries = localState.pipeEntries.length > 0;
+        const localHasEntries =
+          localState.pipeEntries.length > 0 || localState.cigarEntries.length > 0 || localState.spiritEntries.length > 0;
         const localHasDraft = hasDraftData(localState.draft);
         const localHasCatalog = hasCatalogData(localState.userCatalog);
         const localHasCollection = hasCollectionData(localState.collection);
@@ -1354,9 +1373,13 @@ export function HomeShell() {
         const localHasAnyData = localHasEntries || localHasDraft || localHasCatalog || localHasCollection;
 
         if (remoteHasEntries) {
-          setPipeEntries(remoteEntries);
+          setPipeEntries(remotePipeEntries);
+          setCigarEntries(remoteCigarEntries);
+          setSpiritEntries(remoteSpiritEntries);
         } else if (!localHasEntries) {
           setPipeEntries([]);
+          setCigarEntries([]);
+          setSpiritEntries([]);
         }
 
         if (remoteDraft) {
@@ -1516,16 +1539,7 @@ export function HomeShell() {
     } catch (error) {
       console.error("Failed to persist pipe entries", error);
     }
-
-    if (!isSupabaseMode || !authUserId || !remoteReady) return;
-
-    void saveRemotePipeEntries(pipeEntries)
-      .then(() => setSyncNotice("Journal saved to your profile."))
-      .catch((error) => {
-        console.error("Failed to sync remote pipe entries", error);
-        setSyncNotice("I couldn't save your journal changes yet.");
-      });
-  }, [authUserId, isHydrated, isSupabaseMode, pipeEntries, pipeEntryService, remoteReady]);
+  }, [isHydrated, pipeEntries, pipeEntryService]);
 
   useEffect(() => {
     if (!isHydrated) return;
@@ -1562,6 +1576,17 @@ export function HomeShell() {
       console.error("Failed to persist spirit entries", error);
     }
   }, [isHydrated, spiritEntries]);
+
+  useEffect(() => {
+    if (!isHydrated || !isSupabaseMode || !authUserId || !remoteReady) return;
+
+    void saveRemoteJournalEntries([...pipeEntries, ...cigarEntries, ...spiritEntries])
+      .then(() => setSyncNotice("Journal saved to your profile."))
+      .catch((error) => {
+        console.error("Failed to sync remote journal entries", error);
+        setSyncNotice("I couldn't save your journal changes yet.");
+      });
+  }, [authUserId, cigarEntries, isHydrated, isSupabaseMode, pipeEntries, remoteReady, spiritEntries]);
 
   useEffect(() => {
     if (!isHydrated) return;
@@ -2764,7 +2789,7 @@ export function HomeShell() {
     }
 
     const entry: PipeEntry = {
-      id: existingEntry?.id ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      id: existingEntry?.id ?? createJournalEntryId(),
       category: "pipe",
       entryMode,
       brandId: resolvedBrand?.id ?? null,
@@ -2868,7 +2893,7 @@ export function HomeShell() {
     }
 
     const entry: CigarEntry = {
-      id: existingEntry?.id ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      id: existingEntry?.id ?? createJournalEntryId(),
       category: "cigar",
       entryMode,
       brandId: resolvedBrand?.id ?? null,
@@ -2963,7 +2988,7 @@ export function HomeShell() {
     }
 
     const entry: SpiritEntry = {
-      id: existingEntry?.id ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      id: existingEntry?.id ?? createJournalEntryId(),
       category: "spirits",
       entryMode,
       brandId: resolvedBrand?.id ?? null,
