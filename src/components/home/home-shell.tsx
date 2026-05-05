@@ -57,12 +57,20 @@ function createJournalEntryId() {
   return crypto.randomUUID();
 }
 
+function createCollectionItemId() {
+  return crypto.randomUUID();
+}
+
 function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
 function ensureCloudSafeEntryIds<T extends JournalEntry>(entries: T[]) {
   return entries.map((entry) => (isUuid(entry.id) ? entry : { ...entry, id: createJournalEntryId() }));
+}
+
+function ensureCloudSafeCollectionItemIds<T extends { id: string }>(items: T[]) {
+  return items.map((item) => (isUuid(item.id) ? item : { ...item, id: createCollectionItemId() }));
 }
 
 function mergeEntriesById<T extends JournalEntry>(remoteEntries: T[], localEntries: T[]) {
@@ -1239,25 +1247,37 @@ export function HomeShell() {
     }
 
     try {
-      setCollectionCigars(safeParseStored<CollectionCigarItem[]>(window.localStorage.getItem(COLLECTION_CIGARS_KEY), []));
+      setCollectionCigars(
+        ensureCloudSafeCollectionItemIds(safeParseStored<CollectionCigarItem[]>(window.localStorage.getItem(COLLECTION_CIGARS_KEY), []))
+      );
     } catch (error) {
       console.error("Failed to load collection cigars", error);
     }
 
     try {
-      setCollectionTobaccos(safeParseStored<CollectionTobaccoItem[]>(window.localStorage.getItem(COLLECTION_TOBACCOS_KEY), []));
+      setCollectionTobaccos(
+        ensureCloudSafeCollectionItemIds(
+          safeParseStored<CollectionTobaccoItem[]>(window.localStorage.getItem(COLLECTION_TOBACCOS_KEY), [])
+        )
+      );
     } catch (error) {
       console.error("Failed to load collection tobaccos", error);
     }
 
     try {
-      setCollectionPipes(safeParseStored<CollectionPipeItem[]>(window.localStorage.getItem(COLLECTION_PIPES_KEY), []));
+      setCollectionPipes(
+        ensureCloudSafeCollectionItemIds(safeParseStored<CollectionPipeItem[]>(window.localStorage.getItem(COLLECTION_PIPES_KEY), []))
+      );
     } catch (error) {
       console.error("Failed to load collection pipes", error);
     }
 
     try {
-      setCollectionBottles(safeParseStored<CollectionBottleItem[]>(window.localStorage.getItem(COLLECTION_BOTTLES_KEY), []));
+      setCollectionBottles(
+        ensureCloudSafeCollectionItemIds(
+          safeParseStored<CollectionBottleItem[]>(window.localStorage.getItem(COLLECTION_BOTTLES_KEY), [])
+        )
+      );
     } catch (error) {
       console.error("Failed to load collection bottles", error);
     }
@@ -2340,7 +2360,7 @@ export function HomeShell() {
     if (!brand) return;
 
     const item: CollectionCigarItem = {
-      id: editingCollectionCigarId ?? `collection-cigar-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      id: editingCollectionCigarId ?? createCollectionItemId(),
       brand,
       lineName: collectionCigarForm.lineName.trim(),
       vitola: collectionCigarForm.vitola,
@@ -2354,9 +2374,11 @@ export function HomeShell() {
         : new Date().toISOString()
     };
 
-    setCollectionCigars((current) =>
-      editingCollectionCigarId ? current.map((entry) => (entry.id === editingCollectionCigarId ? item : entry)) : [item, ...current]
-    );
+    const nextCollectionCigars = editingCollectionCigarId
+      ? collectionCigars.map((entry) => (entry.id === editingCollectionCigarId ? item : entry))
+      : [item, ...collectionCigars];
+    setCollectionCigars(nextCollectionCigars);
+    syncCollectionStateToProfile(nextCollectionCigars, collectionTobaccos, collectionPipes, collectionBottles);
     setSelectedCollectionDetailKind("cigar");
     setSelectedCollectionDetailId(item.id);
     setEditingCollectionCigarId(null);
@@ -2370,7 +2392,7 @@ export function HomeShell() {
     if (!name) return;
 
     const item: CollectionTobaccoItem = {
-      id: editingCollectionTobaccoId ?? `collection-tobacco-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      id: editingCollectionTobaccoId ?? createCollectionItemId(),
       name,
       brand: collectionTobaccoForm.brand.trim(),
       style: collectionTobaccoForm.style,
@@ -2390,9 +2412,11 @@ export function HomeShell() {
         : new Date().toISOString()
     };
 
-    setCollectionTobaccos((current) =>
-      editingCollectionTobaccoId ? current.map((entry) => (entry.id === editingCollectionTobaccoId ? item : entry)) : [item, ...current]
-    );
+    const nextCollectionTobaccos = editingCollectionTobaccoId
+      ? collectionTobaccos.map((entry) => (entry.id === editingCollectionTobaccoId ? item : entry))
+      : [item, ...collectionTobaccos];
+    setCollectionTobaccos(nextCollectionTobaccos);
+    syncCollectionStateToProfile(collectionCigars, nextCollectionTobaccos, collectionPipes, collectionBottles);
     setSelectedCollectionDetailKind("tobacco");
     setSelectedCollectionDetailId(item.id);
     setEditingCollectionTobaccoId(null);
@@ -2406,7 +2430,7 @@ export function HomeShell() {
     if (!name) return;
 
     const item: CollectionPipeItem = {
-      id: editingCollectionPipeId ?? `collection-pipe-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      id: editingCollectionPipeId ?? createCollectionItemId(),
       name,
       maker: collectionPipeForm.maker.trim(),
       shape: collectionPipeForm.shape,
@@ -2422,9 +2446,11 @@ export function HomeShell() {
         : new Date().toISOString()
     };
 
-    setCollectionPipes((current) =>
-      editingCollectionPipeId ? current.map((entry) => (entry.id === editingCollectionPipeId ? item : entry)) : [item, ...current]
-    );
+    const nextCollectionPipes = editingCollectionPipeId
+      ? collectionPipes.map((entry) => (entry.id === editingCollectionPipeId ? item : entry))
+      : [item, ...collectionPipes];
+    setCollectionPipes(nextCollectionPipes);
+    syncCollectionStateToProfile(collectionCigars, collectionTobaccos, nextCollectionPipes, collectionBottles);
     setSelectedCollectionDetailKind("pipe");
     setSelectedCollectionDetailId(item.id);
     setEditingCollectionPipeId(null);
@@ -2438,7 +2464,7 @@ export function HomeShell() {
     if (!name) return;
 
     const item: CollectionBottleItem = {
-      id: editingCollectionBottleId ?? `collection-bottle-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      id: editingCollectionBottleId ?? createCollectionItemId(),
       name,
       distillery: collectionBottleForm.distillery.trim(),
       spiritType: collectionBottleForm.spiritType,
@@ -2451,9 +2477,11 @@ export function HomeShell() {
         : new Date().toISOString()
     };
 
-    setCollectionBottles((current) =>
-      editingCollectionBottleId ? current.map((entry) => (entry.id === editingCollectionBottleId ? item : entry)) : [item, ...current]
-    );
+    const nextCollectionBottles = editingCollectionBottleId
+      ? collectionBottles.map((entry) => (entry.id === editingCollectionBottleId ? item : entry))
+      : [item, ...collectionBottles];
+    setCollectionBottles(nextCollectionBottles);
+    syncCollectionStateToProfile(collectionCigars, collectionTobaccos, collectionPipes, nextCollectionBottles);
     setSelectedCollectionDetailKind("bottle");
     setSelectedCollectionDetailId(item.id);
     setEditingCollectionBottleId(null);
