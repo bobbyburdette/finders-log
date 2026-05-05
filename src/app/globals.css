@@ -786,11 +786,23 @@ textarea {
   border: 1px solid rgba(212, 180, 106, 0.35);
   background: rgba(212, 180, 106, 0.08);
   cursor: pointer;
+  color: var(--gold-light);
 }
 
 .header-icon-btn.active {
   border-color: rgba(183, 117, 127, 0.5);
   background: rgba(183, 117, 127, 0.12);
+}
+
+.header-icon-btn.danger {
+  border-color: rgba(183, 117, 127, 0.45);
+  background: rgba(183, 117, 127, 0.1);
+  color: #e6b2b8;
+}
+
+.header-icon-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
 }
 
 .profile-hero {

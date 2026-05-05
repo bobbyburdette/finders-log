@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Pencil, Trash2 } from "lucide-react";
 import { CatalogAutocompleteField } from "@/components/home/catalog-autocomplete-field";
 import { appConfig } from "@/lib/app-config";
 import { backendConfig } from "@/lib/backend-config";
@@ -4537,16 +4538,22 @@ export function HomeShell() {
                     ♥
                   </span>
                 </button>
-                <button className="header-action-btn" type="button" onClick={() => startEditingPipeEntry(selectedPipeEntry)}>
-                  Edit
+                <button
+                  className="header-icon-btn"
+                  type="button"
+                  aria-label="Edit pipe session"
+                  onClick={() => startEditingPipeEntry(selectedPipeEntry)}
+                >
+                  <Pencil aria-hidden="true" size={18} strokeWidth={1.8} />
                 </button>
                 <button
-                  className="header-action-btn danger"
+                  className="header-icon-btn danger"
                   type="button"
+                  aria-label="Delete pipe session"
                   disabled={deletingEntryId === selectedPipeEntry.id}
                   onClick={() => void deletePipeEntry(selectedPipeEntry)}
                 >
-                  Delete
+                  <Trash2 aria-hidden="true" size={18} strokeWidth={1.8} />
                 </button>
               </div>
             </header>
@@ -4751,16 +4758,22 @@ export function HomeShell() {
                     ♥
                   </span>
                 </button>
-                <button className="header-action-btn" type="button" onClick={() => startEditingCigarEntry(selectedCigarEntry)}>
-                  Edit
+                <button
+                  className="header-icon-btn"
+                  type="button"
+                  aria-label="Edit cigar session"
+                  onClick={() => startEditingCigarEntry(selectedCigarEntry)}
+                >
+                  <Pencil aria-hidden="true" size={18} strokeWidth={1.8} />
                 </button>
                 <button
-                  className="header-action-btn danger"
+                  className="header-icon-btn danger"
                   type="button"
+                  aria-label="Delete cigar session"
                   disabled={deletingEntryId === selectedCigarEntry.id}
                   onClick={() => void deleteCigarEntry(selectedCigarEntry)}
                 >
-                  Delete
+                  <Trash2 aria-hidden="true" size={18} strokeWidth={1.8} />
                 </button>
               </div>
             </header>
@@ -4996,16 +5009,22 @@ export function HomeShell() {
                     ♥
                   </span>
                 </button>
-                <button className="header-action-btn" type="button" onClick={() => startEditingSpiritEntry(selectedSpiritEntry)}>
-                  Edit
+                <button
+                  className="header-icon-btn"
+                  type="button"
+                  aria-label="Edit spirits session"
+                  onClick={() => startEditingSpiritEntry(selectedSpiritEntry)}
+                >
+                  <Pencil aria-hidden="true" size={18} strokeWidth={1.8} />
                 </button>
                 <button
-                  className="header-action-btn danger"
+                  className="header-icon-btn danger"
                   type="button"
+                  aria-label="Delete spirits session"
                   disabled={deletingEntryId === selectedSpiritEntry.id}
                   onClick={() => void deleteSpiritEntry(selectedSpiritEntry)}
                 >
-                  Delete
+                  <Trash2 aria-hidden="true" size={18} strokeWidth={1.8} />
                 </button>
               </div>
             </header>
