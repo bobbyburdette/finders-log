@@ -73,6 +73,10 @@ function ensureCloudSafeCollectionItemIds<T extends { id: string }>(items: T[]) 
   return items.map((item) => (isUuid(item.id) ? item : { ...item, id: createCollectionItemId() }));
 }
 
+function haveSameIds<T extends { id: string }>(left: T[], right: T[]) {
+  return left.length === right.length && left.every((item, index) => item.id === right[index]?.id);
+}
+
 function mergeEntriesById<T extends JournalEntry>(remoteEntries: T[], localEntries: T[]) {
   const seenIds = new Set(remoteEntries.map((entry) => entry.id));
 
@@ -1789,11 +1793,32 @@ export function HomeShell() {
     nextCollectionPipes = collectionPipes,
     nextCollectionBottles = collectionBottles
   ): CollectionState {
+    const safeCollectionCigars = ensureCloudSafeCollectionItemIds(nextCollectionCigars);
+    const safeCollectionTobaccos = ensureCloudSafeCollectionItemIds(nextCollectionTobaccos);
+    const safeCollectionPipes = ensureCloudSafeCollectionItemIds(nextCollectionPipes);
+    const safeCollectionBottles = ensureCloudSafeCollectionItemIds(nextCollectionBottles);
+
+    if (!haveSameIds(nextCollectionCigars, safeCollectionCigars)) {
+      setCollectionCigars(safeCollectionCigars);
+    }
+
+    if (!haveSameIds(nextCollectionTobaccos, safeCollectionTobaccos)) {
+      setCollectionTobaccos(safeCollectionTobaccos);
+    }
+
+    if (!haveSameIds(nextCollectionPipes, safeCollectionPipes)) {
+      setCollectionPipes(safeCollectionPipes);
+    }
+
+    if (!haveSameIds(nextCollectionBottles, safeCollectionBottles)) {
+      setCollectionBottles(safeCollectionBottles);
+    }
+
     return {
-      cigars: nextCollectionCigars,
-      tobaccos: nextCollectionTobaccos,
-      pipes: nextCollectionPipes,
-      bottles: nextCollectionBottles,
+      cigars: safeCollectionCigars,
+      tobaccos: safeCollectionTobaccos,
+      pipes: safeCollectionPipes,
+      bottles: safeCollectionBottles,
       wishlistCigars: collectionWishlistCigars,
       wishlistPipes: collectionWishlistPipes,
       wishlistBottles: collectionWishlistBottles
@@ -2374,9 +2399,11 @@ export function HomeShell() {
         : new Date().toISOString()
     };
 
-    const nextCollectionCigars = editingCollectionCigarId
+    const nextCollectionCigars = ensureCloudSafeCollectionItemIds(
+      editingCollectionCigarId
       ? collectionCigars.map((entry) => (entry.id === editingCollectionCigarId ? item : entry))
-      : [item, ...collectionCigars];
+      : [item, ...collectionCigars]
+    );
     setCollectionCigars(nextCollectionCigars);
     syncCollectionStateToProfile(nextCollectionCigars, collectionTobaccos, collectionPipes, collectionBottles);
     setSelectedCollectionDetailKind("cigar");
@@ -2412,9 +2439,11 @@ export function HomeShell() {
         : new Date().toISOString()
     };
 
-    const nextCollectionTobaccos = editingCollectionTobaccoId
+    const nextCollectionTobaccos = ensureCloudSafeCollectionItemIds(
+      editingCollectionTobaccoId
       ? collectionTobaccos.map((entry) => (entry.id === editingCollectionTobaccoId ? item : entry))
-      : [item, ...collectionTobaccos];
+      : [item, ...collectionTobaccos]
+    );
     setCollectionTobaccos(nextCollectionTobaccos);
     syncCollectionStateToProfile(collectionCigars, nextCollectionTobaccos, collectionPipes, collectionBottles);
     setSelectedCollectionDetailKind("tobacco");
@@ -2446,9 +2475,11 @@ export function HomeShell() {
         : new Date().toISOString()
     };
 
-    const nextCollectionPipes = editingCollectionPipeId
+    const nextCollectionPipes = ensureCloudSafeCollectionItemIds(
+      editingCollectionPipeId
       ? collectionPipes.map((entry) => (entry.id === editingCollectionPipeId ? item : entry))
-      : [item, ...collectionPipes];
+      : [item, ...collectionPipes]
+    );
     setCollectionPipes(nextCollectionPipes);
     syncCollectionStateToProfile(collectionCigars, collectionTobaccos, nextCollectionPipes, collectionBottles);
     setSelectedCollectionDetailKind("pipe");
@@ -2477,9 +2508,11 @@ export function HomeShell() {
         : new Date().toISOString()
     };
 
-    const nextCollectionBottles = editingCollectionBottleId
+    const nextCollectionBottles = ensureCloudSafeCollectionItemIds(
+      editingCollectionBottleId
       ? collectionBottles.map((entry) => (entry.id === editingCollectionBottleId ? item : entry))
-      : [item, ...collectionBottles];
+      : [item, ...collectionBottles]
+    );
     setCollectionBottles(nextCollectionBottles);
     syncCollectionStateToProfile(collectionCigars, collectionTobaccos, collectionPipes, nextCollectionBottles);
     setSelectedCollectionDetailKind("bottle");
