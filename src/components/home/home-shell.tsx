@@ -1969,6 +1969,27 @@ export function HomeShell() {
     }
   }
 
+  async function saveDeviceJournalToProfile() {
+    if (!authUserId) {
+      setAuthNotice("Sign in before saving this device's journal to your profile.");
+      return;
+    }
+
+    setAuthBusy(true);
+    setAuthNotice("Saving this device's journal to your profile...");
+
+    try {
+      await saveRemoteJournalEntries([...pipeEntries, ...cigarEntries, ...spiritEntries]);
+      setAuthNotice("Journal saved to your profile.");
+      setSyncNotice("Journal saved to your profile.");
+    } catch (error) {
+      console.error("Failed to save device journal to profile", error);
+      setAuthNotice(error instanceof Error ? error.message : "I couldn't save this journal to your profile yet.");
+    } finally {
+      setAuthBusy(false);
+    }
+  }
+
   function openNewSession(category: Category) {
     setSelectedCategory(category);
     setView("form");
@@ -4300,6 +4321,14 @@ export function HomeShell() {
                     <span className="detail-label">Status</span>
                     <span className="detail-value">Signed in</span>
                   </div>
+                  <button
+                    className="cloud-primary-btn"
+                    type="button"
+                    onClick={() => void saveDeviceJournalToProfile()}
+                    disabled={authBusy}
+                  >
+                    {authBusy ? "Saving..." : "Save This Device's Journal to Profile"}
+                  </button>
                 </div>
               ) : (
                 <div className="profile-auth-panel">
