@@ -95,9 +95,7 @@ const socialAuthProviders: Array<{
   label: string;
   mark: string;
 }> = [
-  { provider: "google", label: "Continue with Google", mark: "G" },
-  { provider: "apple", label: "Continue with Apple", mark: "A" },
-  { provider: "facebook", label: "Continue with Facebook", mark: "f" }
+  { provider: "google", label: "Continue with Google", mark: "G" }
 ];
 
 function getProfileAuthRedirectUrl() {
