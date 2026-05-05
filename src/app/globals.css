@@ -760,6 +760,17 @@ textarea {
   text-transform: uppercase;
 }
 
+.header-action-btn.danger {
+  border-color: rgba(183, 117, 127, 0.45);
+  background: rgba(183, 117, 127, 0.1);
+  color: #e6b2b8;
+}
+
+.header-action-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
 .header-action-group {
   display: flex;
   align-items: center;

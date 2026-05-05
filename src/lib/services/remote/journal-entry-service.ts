@@ -8,11 +8,16 @@ export type JournalEntryPayload = PipeEntry | CigarEntry | SpiritEntry;
 
 type JournalEntriesResponse = {
   entries: JournalEntryPayload[];
+  deletedEntryIds?: string[];
 };
 
-export async function fetchRemoteJournalEntries() {
+export async function fetchRemoteJournalState() {
   const url = `${backendConfig.apiBaseUrl}/api/v1/journal-entries`;
-  const payload = await requestJson<JournalEntriesResponse>(url);
+  return requestJson<JournalEntriesResponse>(url);
+}
+
+export async function fetchRemoteJournalEntries() {
+  const payload = await fetchRemoteJournalState();
   return payload.entries;
 }
 
@@ -21,5 +26,13 @@ export async function saveRemoteJournalEntries(entries: JournalEntryPayload[]) {
   await requestJson<JournalEntriesResponse>(url, {
     method: "PUT",
     body: { entries }
+  });
+}
+
+export async function deleteRemoteJournalEntry(id: string) {
+  const url = `${backendConfig.apiBaseUrl}/api/v1/journal-entries`;
+  await requestJson<{ id: string; deletedAt?: string }>(url, {
+    method: "DELETE",
+    body: { id }
   });
 }

@@ -31,7 +31,11 @@ import {
   fetchRemotePipeDraft,
   saveRemotePipeDraft
 } from "@/lib/services/remote/pipe-entry-service";
-import { fetchRemoteJournalEntries, saveRemoteJournalEntries } from "@/lib/services/remote/journal-entry-service";
+import {
+  deleteRemoteJournalEntry,
+  fetchRemoteJournalState,
+  saveRemoteJournalEntries
+} from "@/lib/services/remote/journal-entry-service";
 import { fetchRemoteUserCatalog, saveRemoteUserCatalog } from "@/lib/services/remote/catalog-service";
 import { fetchRemoteCollectionState, saveRemoteCollectionState } from "@/lib/services/remote/collection-service";
 import { appServices } from "@/lib/services/service-factory";
@@ -66,6 +70,11 @@ function mergeEntriesById<T extends JournalEntry>(remoteEntries: T[], localEntri
   return [...remoteEntries, ...localEntries.filter((entry) => !seenIds.has(entry.id))].sort((a, b) =>
     (b.date || b.createdAt).localeCompare(a.date || a.createdAt)
   );
+}
+
+function removeDeletedEntries<T extends JournalEntry>(entries: T[], deletedEntryIds: Set<string>) {
+  if (!deletedEntryIds.size) return entries;
+  return entries.filter((entry) => !deletedEntryIds.has(entry.id));
 }
 
 const socialAuthProviders: Array<{
@@ -750,6 +759,7 @@ export function HomeShell() {
   const [authNotice, setAuthNotice] = useState<string | null>(null);
   const [syncNotice, setSyncNotice] = useState<string | null>(null);
   const [remoteReady, setRemoteReady] = useState(false);
+  const [deletingEntryId, setDeletingEntryId] = useState<string | null>(null);
   const syncTimeoutRef = useRef<number | null>(null);
   const latestLocalStateRef = useRef({
     pipeEntries: [] as PipeEntry[],
@@ -1350,13 +1360,15 @@ export function HomeShell() {
     async function loadRemoteState() {
       try {
         const [entriesResult, draftResult, catalogResult, collectionResult] = await Promise.allSettled([
-          fetchRemoteJournalEntries(),
+          fetchRemoteJournalState(),
           fetchRemotePipeDraft(),
           fetchRemoteUserCatalog(),
           fetchRemoteCollectionState()
         ]);
 
-        const remoteEntries = entriesResult.status === "fulfilled" ? entriesResult.value : [];
+        const remoteEntries = entriesResult.status === "fulfilled" ? entriesResult.value.entries : [];
+        const remoteDeletedEntryIds =
+          entriesResult.status === "fulfilled" ? new Set(entriesResult.value.deletedEntryIds ?? []) : new Set<string>();
         const remotePipeEntries = remoteEntries.filter((entry): entry is PipeEntry => entry.category === "pipe");
         const remoteCigarEntries = remoteEntries.filter((entry): entry is CigarEntry => entry.category === "cigar");
         const remoteSpiritEntries = remoteEntries.filter((entry): entry is SpiritEntry => entry.category === "spirits");
@@ -1373,8 +1385,11 @@ export function HomeShell() {
         const remoteHasDraft = Boolean(remoteDraft);
         const remoteHasCatalog = hasCatalogData(remoteUserCatalog);
         const remoteHasCollection = hasCollectionData(remoteCollection);
+        const localPipeEntries = removeDeletedEntries(localState.pipeEntries, remoteDeletedEntryIds);
+        const localCigarEntries = removeDeletedEntries(localState.cigarEntries, remoteDeletedEntryIds);
+        const localSpiritEntries = removeDeletedEntries(localState.spiritEntries, remoteDeletedEntryIds);
         const localHasEntries =
-          localState.pipeEntries.length > 0 || localState.cigarEntries.length > 0 || localState.spiritEntries.length > 0;
+          localPipeEntries.length > 0 || localCigarEntries.length > 0 || localSpiritEntries.length > 0;
         const localHasDraft = hasDraftData(localState.draft);
         const localHasCatalog = hasCatalogData(localState.userCatalog);
         const localHasCollection = hasCollectionData(localState.collection);
@@ -1382,9 +1397,9 @@ export function HomeShell() {
         const localHasAnyData = localHasEntries || localHasDraft || localHasCatalog || localHasCollection;
 
         if (remoteHasEntries || localHasEntries) {
-          const mergedPipeEntries = mergeEntriesById(remotePipeEntries, localState.pipeEntries);
-          const mergedCigarEntries = mergeEntriesById(remoteCigarEntries, localState.cigarEntries);
-          const mergedSpiritEntries = mergeEntriesById(remoteSpiritEntries, localState.spiritEntries);
+          const mergedPipeEntries = mergeEntriesById(remotePipeEntries, localPipeEntries);
+          const mergedCigarEntries = mergeEntriesById(remoteCigarEntries, localCigarEntries);
+          const mergedSpiritEntries = mergeEntriesById(remoteSpiritEntries, localSpiritEntries);
           const mergedEntries = [...mergedPipeEntries, ...mergedCigarEntries, ...mergedSpiritEntries];
 
           setPipeEntries(mergedPipeEntries);
@@ -1908,6 +1923,77 @@ export function HomeShell() {
     }
 
     setView("picker");
+  }
+
+  async function deleteJournalEntryFromProfile(entryId: string) {
+    if (!isSupabaseMode || !authUserId) return true;
+
+    setSyncNotice("Deleting that entry from your profile...");
+
+    try {
+      await deleteRemoteJournalEntry(entryId);
+      setSyncNotice("Entry deleted from your journal.");
+      return true;
+    } catch (error) {
+      console.error("Failed to delete journal entry from profile", error);
+      setSyncNotice("I couldn't delete that entry from your profile yet.");
+      window.alert("I couldn't delete that entry from your profile yet. Please try again.");
+      return false;
+    }
+  }
+
+  async function deletePipeEntry(entry: PipeEntry) {
+    const confirmed = window.confirm(`Delete "${entry.blendName}" from your journal? This cannot be undone.`);
+    if (!confirmed) return;
+
+    setDeletingEntryId(entry.id);
+    const deletedFromProfile = await deleteJournalEntryFromProfile(entry.id);
+    if (!deletedFromProfile) {
+      setDeletingEntryId(null);
+      return;
+    }
+
+    setPipeEntries((current) => current.filter((item) => item.id !== entry.id));
+    setSelectedPipeEntryId(null);
+    setEditingPipeEntryId(null);
+    setDeletingEntryId(null);
+    setView("home");
+  }
+
+  async function deleteCigarEntry(entry: CigarEntry) {
+    const confirmed = window.confirm(`Delete "${entry.lineName}" from your journal? This cannot be undone.`);
+    if (!confirmed) return;
+
+    setDeletingEntryId(entry.id);
+    const deletedFromProfile = await deleteJournalEntryFromProfile(entry.id);
+    if (!deletedFromProfile) {
+      setDeletingEntryId(null);
+      return;
+    }
+
+    setCigarEntries((current) => current.filter((item) => item.id !== entry.id));
+    setSelectedCigarEntryId(null);
+    setEditingCigarEntryId(null);
+    setDeletingEntryId(null);
+    setView("home");
+  }
+
+  async function deleteSpiritEntry(entry: SpiritEntry) {
+    const confirmed = window.confirm(`Delete "${entry.name}" from your journal? This cannot be undone.`);
+    if (!confirmed) return;
+
+    setDeletingEntryId(entry.id);
+    const deletedFromProfile = await deleteJournalEntryFromProfile(entry.id);
+    if (!deletedFromProfile) {
+      setDeletingEntryId(null);
+      return;
+    }
+
+    setSpiritEntries((current) => current.filter((item) => item.id !== entry.id));
+    setSelectedSpiritEntryId(null);
+    setEditingSpiritEntryId(null);
+    setDeletingEntryId(null);
+    setView("home");
   }
 
   async function sendMagicLink() {
@@ -4454,6 +4540,14 @@ export function HomeShell() {
                 <button className="header-action-btn" type="button" onClick={() => startEditingPipeEntry(selectedPipeEntry)}>
                   Edit
                 </button>
+                <button
+                  className="header-action-btn danger"
+                  type="button"
+                  disabled={deletingEntryId === selectedPipeEntry.id}
+                  onClick={() => void deletePipeEntry(selectedPipeEntry)}
+                >
+                  Delete
+                </button>
               </div>
             </header>
 
@@ -4659,6 +4753,14 @@ export function HomeShell() {
                 </button>
                 <button className="header-action-btn" type="button" onClick={() => startEditingCigarEntry(selectedCigarEntry)}>
                   Edit
+                </button>
+                <button
+                  className="header-action-btn danger"
+                  type="button"
+                  disabled={deletingEntryId === selectedCigarEntry.id}
+                  onClick={() => void deleteCigarEntry(selectedCigarEntry)}
+                >
+                  Delete
                 </button>
               </div>
             </header>
@@ -4896,6 +4998,14 @@ export function HomeShell() {
                 </button>
                 <button className="header-action-btn" type="button" onClick={() => startEditingSpiritEntry(selectedSpiritEntry)}>
                   Edit
+                </button>
+                <button
+                  className="header-action-btn danger"
+                  type="button"
+                  disabled={deletingEntryId === selectedSpiritEntry.id}
+                  onClick={() => void deleteSpiritEntry(selectedSpiritEntry)}
+                >
+                  Delete
                 </button>
               </div>
             </header>
