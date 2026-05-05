@@ -761,6 +761,7 @@ export function HomeShell() {
   const [syncNotice, setSyncNotice] = useState<string | null>(null);
   const [remoteReady, setRemoteReady] = useState(false);
   const [deletingEntryId, setDeletingEntryId] = useState<string | null>(null);
+  const [deletingCollectionItemId, setDeletingCollectionItemId] = useState<string | null>(null);
   const syncTimeoutRef = useRef<number | null>(null);
   const latestLocalStateRef = useRef({
     pipeEntries: [] as PipeEntry[],
@@ -1762,6 +1763,47 @@ export function HomeShell() {
       });
   }
 
+  function createCollectionState(
+    nextCollectionCigars = collectionCigars,
+    nextCollectionTobaccos = collectionTobaccos,
+    nextCollectionPipes = collectionPipes,
+    nextCollectionBottles = collectionBottles
+  ): CollectionState {
+    return {
+      cigars: nextCollectionCigars,
+      tobaccos: nextCollectionTobaccos,
+      pipes: nextCollectionPipes,
+      bottles: nextCollectionBottles,
+      wishlistCigars: collectionWishlistCigars,
+      wishlistPipes: collectionWishlistPipes,
+      wishlistBottles: collectionWishlistBottles
+    };
+  }
+
+  async function syncCollectionStateToProfile(
+    nextCollectionCigars = collectionCigars,
+    nextCollectionTobaccos = collectionTobaccos,
+    nextCollectionPipes = collectionPipes,
+    nextCollectionBottles = collectionBottles
+  ) {
+    if (!isSupabaseMode || !authUserId) return true;
+
+    setSyncNotice("Saving your collection to your profile...");
+
+    try {
+      await saveRemoteCollectionState(
+        createCollectionState(nextCollectionCigars, nextCollectionTobaccos, nextCollectionPipes, nextCollectionBottles)
+      );
+      setSyncNotice("Collection saved to your profile.");
+      return true;
+    } catch (error) {
+      console.error("Failed to save collection to profile", error);
+      setSyncNotice("I couldn't save your collection changes yet.");
+      window.alert("I couldn't save your collection changes to your profile yet. Please try again.");
+      return false;
+    }
+  }
+
   function resetPipeDraft() {
     setPipeForm(defaultPipeForm);
     setPipeTimeOfDay("Evening");
@@ -1995,6 +2037,78 @@ export function HomeShell() {
     setEditingSpiritEntryId(null);
     setDeletingEntryId(null);
     setView("home");
+  }
+
+  async function deleteCollectionCigar(item: CollectionCigarItem) {
+    const confirmed = window.confirm(`Delete "${item.lineName || item.brand}" from your collection? This cannot be undone.`);
+    if (!confirmed) return;
+
+    const nextCollectionCigars = collectionCigars.filter((entry) => entry.id !== item.id);
+    setDeletingCollectionItemId(item.id);
+    const deletedFromProfile = await syncCollectionStateToProfile(nextCollectionCigars, collectionTobaccos, collectionPipes, collectionBottles);
+    if (!deletedFromProfile) {
+      setDeletingCollectionItemId(null);
+      return;
+    }
+    setCollectionCigars(nextCollectionCigars);
+    setSelectedCollectionDetailId(null);
+    setEditingCollectionCigarId(null);
+    setDeletingCollectionItemId(null);
+    setView("collection");
+  }
+
+  async function deleteCollectionTobacco(item: CollectionTobaccoItem) {
+    const confirmed = window.confirm(`Delete "${item.name}" from your collection? This cannot be undone.`);
+    if (!confirmed) return;
+
+    const nextCollectionTobaccos = collectionTobaccos.filter((entry) => entry.id !== item.id);
+    setDeletingCollectionItemId(item.id);
+    const deletedFromProfile = await syncCollectionStateToProfile(collectionCigars, nextCollectionTobaccos, collectionPipes, collectionBottles);
+    if (!deletedFromProfile) {
+      setDeletingCollectionItemId(null);
+      return;
+    }
+    setCollectionTobaccos(nextCollectionTobaccos);
+    setSelectedCollectionDetailId(null);
+    setEditingCollectionTobaccoId(null);
+    setDeletingCollectionItemId(null);
+    setView("collection");
+  }
+
+  async function deleteCollectionPipe(item: CollectionPipeItem) {
+    const confirmed = window.confirm(`Delete "${item.name}" from your collection? This cannot be undone.`);
+    if (!confirmed) return;
+
+    const nextCollectionPipes = collectionPipes.filter((entry) => entry.id !== item.id);
+    setDeletingCollectionItemId(item.id);
+    const deletedFromProfile = await syncCollectionStateToProfile(collectionCigars, collectionTobaccos, nextCollectionPipes, collectionBottles);
+    if (!deletedFromProfile) {
+      setDeletingCollectionItemId(null);
+      return;
+    }
+    setCollectionPipes(nextCollectionPipes);
+    setSelectedCollectionDetailId(null);
+    setEditingCollectionPipeId(null);
+    setDeletingCollectionItemId(null);
+    setView("collection");
+  }
+
+  async function deleteCollectionBottle(item: CollectionBottleItem) {
+    const confirmed = window.confirm(`Delete "${item.name}" from your collection? This cannot be undone.`);
+    if (!confirmed) return;
+
+    const nextCollectionBottles = collectionBottles.filter((entry) => entry.id !== item.id);
+    setDeletingCollectionItemId(item.id);
+    const deletedFromProfile = await syncCollectionStateToProfile(collectionCigars, collectionTobaccos, collectionPipes, nextCollectionBottles);
+    if (!deletedFromProfile) {
+      setDeletingCollectionItemId(null);
+      return;
+    }
+    setCollectionBottles(nextCollectionBottles);
+    setSelectedCollectionDetailId(null);
+    setEditingCollectionBottleId(null);
+    setDeletingCollectionItemId(null);
+    setView("collection");
   }
 
   async function sendMagicLink() {
@@ -3554,16 +3668,33 @@ export function HomeShell() {
                 <img src="/backbtn.png" alt="" />
               </button>
               <h2>Humidor Cigar</h2>
-              <div className="header-action-group">
-                <button className="header-action-btn" type="button" onClick={() => startEditingCollectionCigar(selectedCollectionCigar)}>
-                  Edit
-                </button>
-              </div>
+              <div className="header-spacer" />
             </header>
 
             <section className="detail-hero">
               <div className="detail-kicker">{selectedCollectionCigar.brand || "My Collection"}</div>
               <h1 className="detail-title">{selectedCollectionCigar.lineName || selectedCollectionCigar.brand}</h1>
+              <div className="detail-hero-actions" aria-label="Collection cigar actions">
+                <button
+                  className="detail-hero-icon-btn danger"
+                  type="button"
+                  aria-label="Delete collection cigar"
+                  disabled={deletingCollectionItemId === selectedCollectionCigar.id}
+                  onClick={() => void deleteCollectionCigar(selectedCollectionCigar)}
+                >
+                  <Trash2 aria-hidden="true" size={20} strokeWidth={1.9} />
+                </button>
+                <div className="detail-hero-actions-right">
+                  <button
+                    className="detail-hero-icon-btn"
+                    type="button"
+                    aria-label="Edit collection cigar"
+                    onClick={() => startEditingCollectionCigar(selectedCollectionCigar)}
+                  >
+                    <Pencil aria-hidden="true" size={20} strokeWidth={1.9} />
+                  </button>
+                </div>
+              </div>
             </section>
 
             <section className="form-section detail-section">
@@ -3593,16 +3724,33 @@ export function HomeShell() {
                 <img src="/backbtn.png" alt="" />
               </button>
               <h2>Cellar Tobacco</h2>
-              <div className="header-action-group">
-                <button className="header-action-btn" type="button" onClick={() => startEditingCollectionTobacco(selectedCollectionTobacco)}>
-                  Edit
-                </button>
-              </div>
+              <div className="header-spacer" />
             </header>
 
             <section className="detail-hero">
               <div className="detail-kicker">{selectedCollectionTobacco.brand || "My Collection"}</div>
               <h1 className="detail-title">{selectedCollectionTobacco.name}</h1>
+              <div className="detail-hero-actions" aria-label="Collection tobacco actions">
+                <button
+                  className="detail-hero-icon-btn danger"
+                  type="button"
+                  aria-label="Delete collection tobacco"
+                  disabled={deletingCollectionItemId === selectedCollectionTobacco.id}
+                  onClick={() => void deleteCollectionTobacco(selectedCollectionTobacco)}
+                >
+                  <Trash2 aria-hidden="true" size={20} strokeWidth={1.9} />
+                </button>
+                <div className="detail-hero-actions-right">
+                  <button
+                    className="detail-hero-icon-btn"
+                    type="button"
+                    aria-label="Edit collection tobacco"
+                    onClick={() => startEditingCollectionTobacco(selectedCollectionTobacco)}
+                  >
+                    <Pencil aria-hidden="true" size={20} strokeWidth={1.9} />
+                  </button>
+                </div>
+              </div>
             </section>
 
             <section className="form-section detail-section">
@@ -3635,16 +3783,33 @@ export function HomeShell() {
                 <img src="/backbtn.png" alt="" />
               </button>
               <h2>Rack Pipe</h2>
-              <div className="header-action-group">
-                <button className="header-action-btn" type="button" onClick={() => startEditingCollectionPipe(selectedCollectionPipe)}>
-                  Edit
-                </button>
-              </div>
+              <div className="header-spacer" />
             </header>
 
             <section className="detail-hero">
               <div className="detail-kicker">{selectedCollectionPipe.maker || "My Collection"}</div>
               <h1 className="detail-title">{selectedCollectionPipe.name}</h1>
+              <div className="detail-hero-actions" aria-label="Collection pipe actions">
+                <button
+                  className="detail-hero-icon-btn danger"
+                  type="button"
+                  aria-label="Delete collection pipe"
+                  disabled={deletingCollectionItemId === selectedCollectionPipe.id}
+                  onClick={() => void deleteCollectionPipe(selectedCollectionPipe)}
+                >
+                  <Trash2 aria-hidden="true" size={20} strokeWidth={1.9} />
+                </button>
+                <div className="detail-hero-actions-right">
+                  <button
+                    className="detail-hero-icon-btn"
+                    type="button"
+                    aria-label="Edit collection pipe"
+                    onClick={() => startEditingCollectionPipe(selectedCollectionPipe)}
+                  >
+                    <Pencil aria-hidden="true" size={20} strokeWidth={1.9} />
+                  </button>
+                </div>
+              </div>
             </section>
 
             <section className="form-section detail-section">
@@ -3675,16 +3840,33 @@ export function HomeShell() {
                 <img src="/backbtn.png" alt="" />
               </button>
               <h2>Bar Bottle</h2>
-              <div className="header-action-group">
-                <button className="header-action-btn" type="button" onClick={() => startEditingCollectionBottle(selectedCollectionBottle)}>
-                  Edit
-                </button>
-              </div>
+              <div className="header-spacer" />
             </header>
 
             <section className="detail-hero">
               <div className="detail-kicker">{selectedCollectionBottle.distillery || "My Collection"}</div>
               <h1 className="detail-title">{selectedCollectionBottle.name}</h1>
+              <div className="detail-hero-actions" aria-label="Collection bottle actions">
+                <button
+                  className="detail-hero-icon-btn danger"
+                  type="button"
+                  aria-label="Delete collection bottle"
+                  disabled={deletingCollectionItemId === selectedCollectionBottle.id}
+                  onClick={() => void deleteCollectionBottle(selectedCollectionBottle)}
+                >
+                  <Trash2 aria-hidden="true" size={20} strokeWidth={1.9} />
+                </button>
+                <div className="detail-hero-actions-right">
+                  <button
+                    className="detail-hero-icon-btn"
+                    type="button"
+                    aria-label="Edit collection bottle"
+                    onClick={() => startEditingCollectionBottle(selectedCollectionBottle)}
+                  >
+                    <Pencil aria-hidden="true" size={20} strokeWidth={1.9} />
+                  </button>
+                </div>
+              </div>
             </section>
 
             <section className="form-section detail-section">
