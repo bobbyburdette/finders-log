@@ -1969,27 +1969,6 @@ export function HomeShell() {
     }
   }
 
-  async function saveDeviceJournalToProfile() {
-    if (!authUserId) {
-      setAuthNotice("Sign in before saving this device's journal to your profile.");
-      return;
-    }
-
-    setAuthBusy(true);
-    setAuthNotice("Saving this device's journal to your profile...");
-
-    try {
-      await saveRemoteJournalEntries([...pipeEntries, ...cigarEntries, ...spiritEntries]);
-      setAuthNotice("Journal saved to your profile.");
-      setSyncNotice("Journal saved to your profile.");
-    } catch (error) {
-      console.error("Failed to save device journal to profile", error);
-      setAuthNotice(error instanceof Error ? error.message : "I couldn't save this journal to your profile yet.");
-    } finally {
-      setAuthBusy(false);
-    }
-  }
-
   function openNewSession(category: Category) {
     setSelectedCategory(category);
     setView("form");
@@ -4290,7 +4269,7 @@ export function HomeShell() {
                 {authUserId
                   ? "Your journal is saved to your profile and can follow you across devices."
                   : journalEntryCount > 0
-                    ? "These entries are saved on this device. Sign in to move them into your profile."
+                    ? "Sign in to save this journal to your profile."
                     : "Use your profile to save your journal and access it across devices."}
               </p>
             </section>
@@ -4298,7 +4277,7 @@ export function HomeShell() {
             <section className="profile-stats">
               <article className="profile-stat-card">
                 <div className="profile-stat-value">{journalEntryCount}</div>
-                <div className="profile-stat-label">{authUserId ? "Journal Entries" : "Device Entries"}</div>
+                <div className="profile-stat-label">Journal Entries</div>
               </article>
               <article className="profile-stat-card">
                 <div className="profile-stat-value">{favoriteCount}</div>
@@ -4321,20 +4300,12 @@ export function HomeShell() {
                     <span className="detail-label">Status</span>
                     <span className="detail-value">Signed in</span>
                   </div>
-                  <button
-                    className="cloud-primary-btn"
-                    type="button"
-                    onClick={() => void saveDeviceJournalToProfile()}
-                    disabled={authBusy}
-                  >
-                    {authBusy ? "Saving..." : "Save This Device's Journal to Profile"}
-                  </button>
                 </div>
               ) : (
                 <div className="profile-auth-panel">
                   {journalEntryCount > 0 ? (
                     <div className="cloud-strip-note">
-                      Sign in on this device to add these entries to your profile.
+                      Sign in to add these entries to your profile.
                     </div>
                   ) : null}
                   {socialAuthProviders.map((provider) => (
@@ -4378,7 +4349,7 @@ export function HomeShell() {
                 </div>
                 <div className="profile-setting-row">
                   <span className="detail-label">Journal</span>
-                  <span className="detail-value">{authUserId ? "Saved to your profile" : "Saved locally on this device"}</span>
+                  <span className="detail-value">{authUserId ? "Saved to your profile" : "Sign in to save to your profile"}</span>
                 </div>
                 <div className="profile-setting-row">
                   <span className="detail-label">Settings</span>
