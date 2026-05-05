@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import { Heart, Pencil, Trash2 } from "lucide-react";
 import { CatalogAutocompleteField } from "@/components/home/catalog-autocomplete-field";
 import { appConfig } from "@/lib/app-config";
 import { backendConfig } from "@/lib/backend-config";
@@ -4527,35 +4527,7 @@ export function HomeShell() {
                 <img src="/backbtn.png" alt="" />
               </button>
               <h2>Pipe Session</h2>
-              <div className="header-action-group">
-                <button
-                  className={selectedPipeEntry.isFavorite ? "header-icon-btn active" : "header-icon-btn"}
-                  type="button"
-                  aria-label={favoriteLabel(selectedPipeEntry.isFavorite)}
-                  onClick={() => togglePipeFavorite(selectedPipeEntry.id)}
-                >
-                  <span className={selectedPipeEntry.isFavorite ? "detail-favorite-heart active" : "detail-favorite-heart"} aria-hidden="true">
-                    ♥
-                  </span>
-                </button>
-                <button
-                  className="header-icon-btn"
-                  type="button"
-                  aria-label="Edit pipe session"
-                  onClick={() => startEditingPipeEntry(selectedPipeEntry)}
-                >
-                  <Pencil aria-hidden="true" size={18} strokeWidth={1.8} />
-                </button>
-                <button
-                  className="header-icon-btn danger"
-                  type="button"
-                  aria-label="Delete pipe session"
-                  disabled={deletingEntryId === selectedPipeEntry.id}
-                  onClick={() => void deletePipeEntry(selectedPipeEntry)}
-                >
-                  <Trash2 aria-hidden="true" size={18} strokeWidth={1.8} />
-                </button>
-              </div>
+              <div className="header-spacer" />
             </header>
 
             {!selectedPipeEntryIsFull ? (
@@ -4573,6 +4545,35 @@ export function HomeShell() {
               <div className="detail-score">
                 {selectedPipeEntry.suggestedScore.toFixed(1)}
                 <span> /10</span>
+              </div>
+              <div className="detail-hero-actions" aria-label="Pipe session actions">
+                <button
+                  className="detail-hero-icon-btn danger"
+                  type="button"
+                  aria-label="Delete pipe session"
+                  disabled={deletingEntryId === selectedPipeEntry.id}
+                  onClick={() => void deletePipeEntry(selectedPipeEntry)}
+                >
+                  <Trash2 aria-hidden="true" size={20} strokeWidth={1.9} />
+                </button>
+                <div className="detail-hero-actions-right">
+                  <button
+                    className={selectedPipeEntry.isFavorite ? "detail-hero-icon-btn active" : "detail-hero-icon-btn"}
+                    type="button"
+                    aria-label={favoriteLabel(selectedPipeEntry.isFavorite)}
+                    onClick={() => togglePipeFavorite(selectedPipeEntry.id)}
+                  >
+                    <Heart aria-hidden="true" size={20} strokeWidth={1.9} fill={selectedPipeEntry.isFavorite ? "currentColor" : "none"} />
+                  </button>
+                  <button
+                    className="detail-hero-icon-btn"
+                    type="button"
+                    aria-label="Edit pipe session"
+                    onClick={() => startEditingPipeEntry(selectedPipeEntry)}
+                  >
+                    <Pencil aria-hidden="true" size={20} strokeWidth={1.9} />
+                  </button>
+                </div>
               </div>
             </section>
 
@@ -4747,35 +4748,7 @@ export function HomeShell() {
                 <img src="/backbtn.png" alt="" />
               </button>
               <h2>Cigar Session</h2>
-              <div className="header-action-group">
-                <button
-                  className={selectedCigarEntry.isFavorite ? "header-icon-btn active" : "header-icon-btn"}
-                  type="button"
-                  aria-label={favoriteLabel(selectedCigarEntry.isFavorite)}
-                  onClick={() => toggleCigarFavorite(selectedCigarEntry.id)}
-                >
-                  <span className={selectedCigarEntry.isFavorite ? "detail-favorite-heart active" : "detail-favorite-heart"} aria-hidden="true">
-                    ♥
-                  </span>
-                </button>
-                <button
-                  className="header-icon-btn"
-                  type="button"
-                  aria-label="Edit cigar session"
-                  onClick={() => startEditingCigarEntry(selectedCigarEntry)}
-                >
-                  <Pencil aria-hidden="true" size={18} strokeWidth={1.8} />
-                </button>
-                <button
-                  className="header-icon-btn danger"
-                  type="button"
-                  aria-label="Delete cigar session"
-                  disabled={deletingEntryId === selectedCigarEntry.id}
-                  onClick={() => void deleteCigarEntry(selectedCigarEntry)}
-                >
-                  <Trash2 aria-hidden="true" size={18} strokeWidth={1.8} />
-                </button>
-              </div>
+              <div className="header-spacer" />
             </header>
 
             {!selectedCigarEntryIsFull ? (
@@ -4793,6 +4766,35 @@ export function HomeShell() {
               <div className="detail-score">
                 {selectedCigarEntry.suggestedScore.toFixed(1)}
                 <span> /10</span>
+              </div>
+              <div className="detail-hero-actions" aria-label="Cigar session actions">
+                <button
+                  className="detail-hero-icon-btn danger"
+                  type="button"
+                  aria-label="Delete cigar session"
+                  disabled={deletingEntryId === selectedCigarEntry.id}
+                  onClick={() => void deleteCigarEntry(selectedCigarEntry)}
+                >
+                  <Trash2 aria-hidden="true" size={20} strokeWidth={1.9} />
+                </button>
+                <div className="detail-hero-actions-right">
+                  <button
+                    className={selectedCigarEntry.isFavorite ? "detail-hero-icon-btn active" : "detail-hero-icon-btn"}
+                    type="button"
+                    aria-label={favoriteLabel(selectedCigarEntry.isFavorite)}
+                    onClick={() => toggleCigarFavorite(selectedCigarEntry.id)}
+                  >
+                    <Heart aria-hidden="true" size={20} strokeWidth={1.9} fill={selectedCigarEntry.isFavorite ? "currentColor" : "none"} />
+                  </button>
+                  <button
+                    className="detail-hero-icon-btn"
+                    type="button"
+                    aria-label="Edit cigar session"
+                    onClick={() => startEditingCigarEntry(selectedCigarEntry)}
+                  >
+                    <Pencil aria-hidden="true" size={20} strokeWidth={1.9} />
+                  </button>
+                </div>
               </div>
             </section>
 
@@ -4998,35 +5000,7 @@ export function HomeShell() {
                 <img src="/backbtn.png" alt="" />
               </button>
               <h2>Spirits Session</h2>
-              <div className="header-action-group">
-                <button
-                  className={selectedSpiritEntry.isFavorite ? "header-icon-btn active" : "header-icon-btn"}
-                  type="button"
-                  aria-label={favoriteLabel(selectedSpiritEntry.isFavorite)}
-                  onClick={() => toggleSpiritFavorite(selectedSpiritEntry.id)}
-                >
-                  <span className={selectedSpiritEntry.isFavorite ? "detail-favorite-heart active" : "detail-favorite-heart"} aria-hidden="true">
-                    ♥
-                  </span>
-                </button>
-                <button
-                  className="header-icon-btn"
-                  type="button"
-                  aria-label="Edit spirits session"
-                  onClick={() => startEditingSpiritEntry(selectedSpiritEntry)}
-                >
-                  <Pencil aria-hidden="true" size={18} strokeWidth={1.8} />
-                </button>
-                <button
-                  className="header-icon-btn danger"
-                  type="button"
-                  aria-label="Delete spirits session"
-                  disabled={deletingEntryId === selectedSpiritEntry.id}
-                  onClick={() => void deleteSpiritEntry(selectedSpiritEntry)}
-                >
-                  <Trash2 aria-hidden="true" size={18} strokeWidth={1.8} />
-                </button>
-              </div>
+              <div className="header-spacer" />
             </header>
 
             {!selectedSpiritEntryIsFull ? (
@@ -5044,6 +5018,35 @@ export function HomeShell() {
               <div className="detail-score">
                 {selectedSpiritEntry.rating.toFixed(1)}
                 <span> /10</span>
+              </div>
+              <div className="detail-hero-actions" aria-label="Spirits session actions">
+                <button
+                  className="detail-hero-icon-btn danger"
+                  type="button"
+                  aria-label="Delete spirits session"
+                  disabled={deletingEntryId === selectedSpiritEntry.id}
+                  onClick={() => void deleteSpiritEntry(selectedSpiritEntry)}
+                >
+                  <Trash2 aria-hidden="true" size={20} strokeWidth={1.9} />
+                </button>
+                <div className="detail-hero-actions-right">
+                  <button
+                    className={selectedSpiritEntry.isFavorite ? "detail-hero-icon-btn active" : "detail-hero-icon-btn"}
+                    type="button"
+                    aria-label={favoriteLabel(selectedSpiritEntry.isFavorite)}
+                    onClick={() => toggleSpiritFavorite(selectedSpiritEntry.id)}
+                  >
+                    <Heart aria-hidden="true" size={20} strokeWidth={1.9} fill={selectedSpiritEntry.isFavorite ? "currentColor" : "none"} />
+                  </button>
+                  <button
+                    className="detail-hero-icon-btn"
+                    type="button"
+                    aria-label="Edit spirits session"
+                    onClick={() => startEditingSpiritEntry(selectedSpiritEntry)}
+                  >
+                    <Pencil aria-hidden="true" size={20} strokeWidth={1.9} />
+                  </button>
+                </div>
               </div>
               <div className="detail-hero-meta">
                 <span className="detail-hero-pill">{selectedSpiritEntry.spiritType || "Spirit"}</span>
