@@ -1381,9 +1381,18 @@ export function HomeShell() {
         const localHasAnyData = localHasEntries || localHasDraft || localHasCatalog || localHasCollection;
 
         if (remoteHasEntries || localHasEntries) {
-          setPipeEntries(mergeEntriesById(remotePipeEntries, localState.pipeEntries));
-          setCigarEntries(mergeEntriesById(remoteCigarEntries, localState.cigarEntries));
-          setSpiritEntries(mergeEntriesById(remoteSpiritEntries, localState.spiritEntries));
+          const mergedPipeEntries = mergeEntriesById(remotePipeEntries, localState.pipeEntries);
+          const mergedCigarEntries = mergeEntriesById(remoteCigarEntries, localState.cigarEntries);
+          const mergedSpiritEntries = mergeEntriesById(remoteSpiritEntries, localState.spiritEntries);
+          const mergedEntries = [...mergedPipeEntries, ...mergedCigarEntries, ...mergedSpiritEntries];
+
+          setPipeEntries(mergedPipeEntries);
+          setCigarEntries(mergedCigarEntries);
+          setSpiritEntries(mergedSpiritEntries);
+
+          if (localHasEntries) {
+            await saveRemoteJournalEntries(mergedEntries);
+          }
         } else if (!localHasEntries) {
           setPipeEntries([]);
           setCigarEntries([]);
