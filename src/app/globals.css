@@ -1877,14 +1877,15 @@ textarea {
 
 .bottom-nav {
   position: fixed;
-  left: 0;
-  right: 0;
+  left: 50%;
   bottom: 0;
   z-index: 150;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: end;
   width: 100%;
+  max-width: 480px;
+  transform: translateX(-50%);
   border-top: 1px solid var(--border2);
   background: rgba(10, 8, 6, 0.97);
   padding:
