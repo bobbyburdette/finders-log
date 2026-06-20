@@ -10,12 +10,7 @@ import {
   mergeCatalogStores,
   searchBrands,
   searchItems,
-  type CatalogBrand,
-  type CatalogItem,
-  type CatalogItemMetadata,
-  type CatalogStore,
-  type CatalogSuggestion,
-  type CatalogType
+  type CatalogStore
 } from "@/lib/catalog";
 import { seedCatalog } from "@/lib/catalog-seed";
 import { requestJson } from "@/lib/services/http-client";

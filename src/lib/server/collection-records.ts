@@ -25,10 +25,6 @@ function readString(value: unknown) {
   return typeof value === "string" ? value : "";
 }
 
-function readNumber(value: unknown) {
-  return typeof value === "number" ? value : 0;
-}
-
 function readBoolean(value: unknown) {
   return typeof value === "boolean" ? value : false;
 }

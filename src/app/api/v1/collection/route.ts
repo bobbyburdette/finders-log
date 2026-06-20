@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { emptyCollectionState, type CollectionState } from "@/lib/collection";
 import { jsonError, requireSupabaseUser } from "@/lib/server/api-helpers";
 import { mapCollectionRowsToState, mapCollectionStateToItemRows, mapCollectionStateToWishlistRows } from "@/lib/server/collection-records";
+import { getStaleIds, reconcileNamedRows } from "@/lib/sync-reconciliation";
 
 type CollectionResponse = {
   collection: CollectionState;
@@ -51,19 +52,35 @@ export async function PUT(request: Request) {
 
   const itemRows = mapCollectionStateToItemRows(auth.userId, collection);
   const wishlistRows = mapCollectionStateToWishlistRows(auth.userId, collection);
-  const incomingItemIds = itemRows.map((row) => row.id);
 
-  const { data: existingRows, error: existingError } = await auth.supabase
-    .from("collection_item")
-    .select("id")
-    .eq("user_id", auth.userId);
+  const [{ data: existingRows, error: existingError }, { data: existingWishlistRows, error: existingWishlistError }] =
+    await Promise.all([
+      auth.supabase.from("collection_item").select("id").eq("user_id", auth.userId),
+      auth.supabase
+        .from("wishlist_item")
+        .select("id, category, name")
+        .eq("user_id", auth.userId)
+        .is("fulfilled_at", null)
+        .in("category", ["cigar", "pipe", "spirits"])
+    ]);
 
-  if (existingError) {
-    return jsonError("Failed to inspect existing collection items.", 500, { detail: existingError.message });
+  if (existingError || existingWishlistError) {
+    return jsonError("Failed to inspect the existing collection.", 500, {
+      detail: existingError?.message ?? existingWishlistError?.message
+    });
   }
 
-  const existingIds = (existingRows ?? []).map((row) => row.id as string);
-  const idsToDelete = existingIds.filter((id) => !incomingItemIds.includes(id));
+  const idsToDelete = getStaleIds((existingRows ?? []) as Array<{ id: string }>, itemRows);
+
+  if (itemRows.length) {
+    const { error: upsertError } = await auth.supabase
+      .from("collection_item")
+      .upsert(itemRows, { onConflict: "id" });
+
+    if (upsertError) {
+      return jsonError("Failed to save collection items to Supabase.", 500, { detail: upsertError.message });
+    }
+  }
 
   if (idsToDelete.length) {
     const { error: deleteError } = await auth.supabase
@@ -77,31 +94,30 @@ export async function PUT(request: Request) {
     }
   }
 
-  if (itemRows.length) {
-    const { error: upsertError } = await auth.supabase
-      .from("collection_item")
-      .upsert(itemRows, { onConflict: "id" });
+  const { rowsToInsert: wishlistRowsToInsert, idsToDelete: wishlistIdsToDelete } = reconcileNamedRows(
+    (existingWishlistRows ?? []) as Array<{ id: string; category: string; name: string }>,
+    wishlistRows
+  );
 
-    if (upsertError) {
-      return jsonError("Failed to save collection items to Supabase.", 500, { detail: upsertError.message });
+  if (wishlistRowsToInsert.length) {
+    const { error: wishlistUpsertError } = await auth.supabase.from("wishlist_item").insert(wishlistRowsToInsert);
+
+    if (wishlistUpsertError) {
+      return jsonError("Failed to save collection wishlist items.", 500, { detail: wishlistUpsertError.message });
     }
   }
 
-  const { error: clearWishlistError } = await auth.supabase
-    .from("wishlist_item")
-    .delete()
-    .eq("user_id", auth.userId)
-    .in("category", ["cigar", "pipe", "spirits"]);
+  if (wishlistIdsToDelete.length) {
+    const { error: wishlistDeleteError } = await auth.supabase
+      .from("wishlist_item")
+      .delete()
+      .eq("user_id", auth.userId)
+      .in("id", wishlistIdsToDelete);
 
-  if (clearWishlistError) {
-    return jsonError("Failed to clear existing collection wishlist items.", 500, { detail: clearWishlistError.message });
-  }
-
-  if (wishlistRows.length) {
-    const { error: wishlistUpsertError } = await auth.supabase.from("wishlist_item").insert(wishlistRows);
-
-    if (wishlistUpsertError) {
-      return jsonError("Failed to save collection wishlist items to Supabase.", 500, { detail: wishlistUpsertError.message });
+    if (wishlistDeleteError) {
+      return jsonError("Failed to remove old collection wishlist items.", 500, {
+        detail: wishlistDeleteError.message
+      });
     }
   }
 

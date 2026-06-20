@@ -76,7 +76,7 @@ Add these redirect URLs in the Supabase auth URL configuration:
 - your hosted preview callback URL
 - your production callback URL
 
-The app sends users back to `/auth/callback?next=/?auth=profile` after social login or email magic-link login. The callback exchanges the Supabase auth code, returns the user to the profile screen, and displays provider errors there if Supabase sends one back.
+The app sends users back to `/auth/callback` after social login or email magic-link login. The callback exchanges the Supabase auth code, returns the user to the profile screen, and displays provider errors there if Supabase sends one back.
 
 ## How To Tell If It Is Working
 

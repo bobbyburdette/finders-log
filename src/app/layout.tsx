@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { appConfig } from "@/lib/app-config";
 import "./globals.css";
@@ -15,7 +15,20 @@ const crimsonPro = localFont({
 
 export const metadata: Metadata = {
   title: appConfig.name,
-  description: appConfig.description
+  description: appConfig.description,
+  applicationName: appConfig.name,
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: appConfig.name
+  }
+};
+
+export const viewport: Viewport = {
+  themeColor: "#080704",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover"
 };
 
 export default function RootLayout({

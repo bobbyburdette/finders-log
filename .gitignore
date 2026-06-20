@@ -1,5 +1,7 @@
 .next
+.vercel
 node_modules
+.pnpm-store
 *.log
 dist
 coverage

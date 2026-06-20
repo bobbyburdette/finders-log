@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Heart, Pencil, Trash2 } from "lucide-react";
+import { BottomNavigation } from "@/components/home/bottom-navigation";
 import { CatalogAutocompleteField } from "@/components/home/catalog-autocomplete-field";
+import { FlameRatingField } from "@/components/home/flame-rating-field";
 import { appConfig } from "@/lib/app-config";
 import { backendConfig } from "@/lib/backend-config";
 import { emptyCollectionState, hasCollectionData, type CollectionBottleItem, type CollectionCigarItem, type CollectionPipeItem, type CollectionState, type CollectionTobaccoItem } from "@/lib/collection";
@@ -15,9 +17,11 @@ import {
   type CatalogStore,
   type CatalogSuggestion
 } from "@/lib/catalog";
+import { ensureCloudSafeCatalogIds } from "@/lib/catalog-cloud-ids";
 import { defaultCigarForm, defaultCigarRatings, type CigarEntry, type CigarFormState, type CigarRatings } from "@/lib/cigar-journal";
 import { browserPipeJournalRepository } from "@/lib/data/pipe-journal-repository";
 import { homeFilters, homeSorts } from "@/lib/domain";
+import { compareJournalEntriesByDate, getLocalDateInputValue } from "@/lib/journal-entry-utils";
 import {
   defaultPipeForm,
   defaultPipeRatings,
@@ -80,8 +84,8 @@ function haveSameIds<T extends { id: string }>(left: T[], right: T[]) {
 function mergeEntriesById<T extends JournalEntry>(remoteEntries: T[], localEntries: T[]) {
   const seenIds = new Set(remoteEntries.map((entry) => entry.id));
 
-  return [...remoteEntries, ...localEntries.filter((entry) => !seenIds.has(entry.id))].sort((a, b) =>
-    (b.date || b.createdAt).localeCompare(a.date || a.createdAt)
+  return [...remoteEntries, ...localEntries.filter((entry) => !seenIds.has(entry.id))].sort(
+    compareJournalEntriesByDate
   );
 }
 
@@ -101,12 +105,7 @@ const socialAuthProviders: Array<{
 function getProfileAuthRedirectUrl() {
   const fallbackOrigin = "http://localhost:3000";
   const currentOrigin = typeof window !== "undefined" ? window.location.origin : "";
-  const callbackUrl = currentOrigin ? `${currentOrigin}/auth/callback` : getAuthCallbackUrl() || `${fallbackOrigin}/auth/callback`;
-  const redirectUrl = new URL(callbackUrl, fallbackOrigin);
-
-  redirectUrl.searchParams.set("next", "/?auth=profile");
-
-  return redirectUrl.toString();
+  return currentOrigin ? `${currentOrigin}/auth/callback` : getAuthCallbackUrl() || `${fallbackOrigin}/auth/callback`;
 }
 
 const pickerItems: Array<{
@@ -190,7 +189,6 @@ const spiritTypeOptions = [
 ] as const;
 const spiritDrinkStyleOptions = ["Neat", "Rocks", "Splash", "Cocktail"] as const;
 const spiritBuyAgainOptions = ["Yes", "Maybe", "No"] as const;
-const spiritQuickTagOptions = ["Sweet", "Spicy", "Smoky", "Oak", "Harsh", "Smooth", "Dessert", "Daily Pour"] as const;
 const spiritColorOptions = ["Clear", "Straw", "Gold", "Copper", "Tawny", "Mahogany", "Old Oak"] as const;
 const spiritClarityOptions = ["Clear", "Hazy", "Opaque"] as const;
 const spiritLegsOptions = ["Thick / Slow", "Semi-slow", "Thin / Fast"] as const;
@@ -244,7 +242,7 @@ const collectionTabs: Array<{
     tabLabel: "The Humidor",
     heroTitle: "The Humidor",
     heroSubtitle: "Cigars in your rotation",
-    heroImage: "/MyHumidor2.png",
+    heroImage: "/MyHumidor2.jpg",
     sections: [
       {
         title: "My Cigars",
@@ -266,7 +264,7 @@ const collectionTabs: Array<{
     tabLabel: "The Cellar",
     heroTitle: "The Cellar",
     heroSubtitle: "Your tobacco collection & pipes",
-    heroImage: "/MyCellar2.png",
+    heroImage: "/MyCellar2.jpg",
     sections: [
       {
         title: "My Tobacco",
@@ -295,7 +293,7 @@ const collectionTabs: Array<{
     tabLabel: "The Bar",
     heroTitle: "The Bar",
     heroSubtitle: "Bottles open, sealed & on deck",
-    heroImage: "/MyBar2.png",
+    heroImage: "/MyBar2.jpg",
     sections: [
       {
         title: "My Bottles",
@@ -322,14 +320,11 @@ const COLLECTION_WISHLIST_CIGARS_KEY = "finders-log.collection.wishlist.cigars";
 const COLLECTION_WISHLIST_PIPES_KEY = "finders-log.collection.wishlist.pipes";
 const COLLECTION_WISHLIST_BOTTLES_KEY = "finders-log.collection.wishlist.bottles";
 const collectionCigarVitolaOptions = ["Robusto", "Toro", "Churchill", "Corona", "Gordo", "Petit Corona", "Lancero"] as const;
-const collectionCigarFormatOptions = ["Single", "5-Pack", "Box", "Bundle"] as const;
 const collectionCigarWrapperShadeOptions = ["Claro", "Natural", "Colorado", "Maduro", "Oscuro"] as const;
 const collectionCigarStatusOptions = ["Resting", "Ready to Smoke", "Aging", "Gone"] as const;
 const collectionTobaccoStyleOptions = ["Virginia", "VaPer", "English", "Balkan", "Aromatic", "Burley", "Oriental", "Lakeland", "Other"] as const;
 const collectionTobaccoCutOptions = ["Ribbon", "Flake", "Broken Flake", "Coin", "Plug", "Ready Rubbed", "Shag", "Crumble Cake", "Other"] as const;
 const collectionTobaccoStorageOptions = ["Sealed Tin", "Mason Jar", "Vacuum Sealed", "Bulk Bag", "Other"] as const;
-const collectionTobaccoNicotineOptions = ["Mild", "Medium", "Full"] as const;
-const collectionTobaccoRoomNoteOptions = ["Friendly", "Neutral", "Unpleasant"] as const;
 const collectionTobaccoStatusOptions = ["Sealed", "Aging", "In Rotation", "Finished"] as const;
 const collectionPipeShapeOptions = ["Billiard", "Bent Billiard", "Dublin", "Apple", "Brandy", "Pot", "Bulldog", "Canadian", "Churchwarden", "Poker", "Rhodesian", "Prince", "Freehand", "Other"] as const;
 const collectionPipeMaterialOptions = ["Briar", "Meerschaum", "Corn Cob", "Clay", "Other"] as const;
@@ -470,82 +465,6 @@ function hasDraftData(draft: {
   );
 }
 
-function hasCigarDraftData(draft: {
-  form: CigarFormState;
-  timeOfDay: string;
-  wrapperShade: string;
-  ratings: CigarRatings;
-  entryMode: EntryMode;
-}) {
-  const { form, ratings } = draft;
-  return Boolean(
-    form.brand.trim() ||
-      form.lineName.trim() ||
-      form.date.trim() ||
-      form.purchaseDate.trim() ||
-      form.boughtFrom.trim() ||
-      form.price.trim() ||
-      form.restTime.trim() ||
-      form.setting.trim() ||
-      form.location.trim() ||
-      form.vitola.trim() ||
-      form.cutType.trim() ||
-      form.countryFactory.trim() ||
-      form.wrapper.trim() ||
-      form.binder.trim() ||
-      form.filler.trim() ||
-      form.strengthBand !== "Medium" ||
-      form.flavorNotes.length > 0 ||
-      form.quickNotes.trim() ||
-      form.firstThirdNotes.trim() ||
-      form.middleThirdNotes.trim() ||
-      form.finalThirdNotes.trim() ||
-      form.pairing.trim() ||
-      form.buyAgain.trim() ||
-      draft.timeOfDay !== "Evening" ||
-      draft.wrapperShade !== "Natural" ||
-      draft.entryMode !== "quick" ||
-      Object.values(ratings).some((value) => value > 0)
-  );
-}
-
-function hasSpiritDraftData(draft: SpiritDraftState) {
-  const { form } = draft;
-  return Boolean(
-    form.name.trim() ||
-      form.brand.trim() ||
-      form.date.trim() ||
-      form.timeOfDay !== "Evening" ||
-      form.spiritType !== "Bourbon" ||
-      form.ageStatement.trim() ||
-      form.proof.trim() ||
-      form.mashbill.trim() ||
-      form.barrelTypeFinish.trim() ||
-      form.batchBarrelNumber.trim() ||
-      form.color.trim() ||
-      form.clarity.trim() ||
-      form.legs.trim() ||
-      form.beading.trim() ||
-      form.glass.trim() ||
-      form.aromaComplexity.trim() ||
-      form.aromaNotes.trim() ||
-      form.palateSweetness.trim() ||
-      form.palateTexture.trim() ||
-      form.palateBody.trim() ||
-      form.palateNotes.trim() ||
-      form.flavorNotes.length > 0 ||
-      form.finishLength.trim() ||
-      form.finishNotes.trim() ||
-      form.pricePaid.trim() ||
-      form.drinkStyle !== "Neat" ||
-      form.overallImpression.trim() ||
-      form.buyAgain.trim() ||
-      form.quickTags.length > 0 ||
-      draft.entryMode !== "quick" ||
-      draft.rating > 0
-  );
-}
-
 function isPipeEntryFull(entry: PipeEntry) {
   return Boolean(
     entry.setting ||
@@ -614,10 +533,6 @@ function getEntryDisplayTitle(entry: JournalEntry) {
   if (entry.category === "pipe") return entry.blendName;
   if (entry.category === "cigar") return entry.lineName;
   return entry.name;
-}
-
-function getEntryDisplayBrand(entry: JournalEntry) {
-  return entry.brand || (entry.category === "pipe" ? "Pipe Journal" : entry.category === "cigar" ? "Cigar Journal" : "Spirits Journal");
 }
 
 function getEntryMetaLine(entry: JournalEntry) {
@@ -707,6 +622,7 @@ export function HomeShell() {
   const { catalogService, pipeEntryService } = appServices;
   const isSupabaseMode = backendConfig.currentDataProvider === "supabase";
   const canShowProfileAuth = Boolean(backendConfig.supabaseUrl);
+  const cloudProfilesAvailable = isSupabaseMode && canShowProfileAuth;
   const [activeFilter, setActiveFilter] = useState("all");
   const [activeSort, setActiveSort] = useState("newest");
   const [searchOpen, setSearchOpen] = useState(false);
@@ -908,17 +824,6 @@ export function HomeShell() {
     () => catalogService.findBrandByExactName(catalogStore, "pipeTobaccos", pipeForm.brand),
     [catalogService, catalogStore, pipeForm.brand]
   );
-  const activePipeBlend = useMemo(
-    () =>
-      catalogService.findItemByExactName(
-        catalogStore,
-        "pipeTobaccos",
-        pipeForm.blendName,
-        activePipeBrand?.id ?? undefined
-      ),
-    [activePipeBrand?.id, catalogService, catalogStore, pipeForm.blendName]
-  );
-
   const pipeBrandSuggestions = useMemo(
     () => catalogService.searchBrands(catalogStore, "pipeTobaccos", pipeForm.brand),
     [catalogService, catalogStore, pipeForm.brand]
@@ -945,22 +850,9 @@ export function HomeShell() {
       }),
     [catalogService, catalogStore, pipeForm.pipeUsed]
   );
-  const activePipeUsedItem = useMemo(
-    () =>
-      catalogStore.items.find(
-        (item) =>
-          item.type === "pipes" &&
-          catalogService.getCatalogItemDisplayName(catalogStore, item).toLowerCase() === pipeForm.pipeUsed.trim().toLowerCase()
-      ) ?? null,
-    [catalogService, catalogStore, pipeForm.pipeUsed]
-  );
   const activeCigarBrand = useMemo(
     () => catalogService.findBrandByExactName(catalogStore, "cigars", cigarForm.brand),
     [catalogService, catalogStore, cigarForm.brand]
-  );
-  const activeCigarLine = useMemo(
-    () => catalogService.findItemByExactName(catalogStore, "cigars", cigarForm.lineName, activeCigarBrand?.id ?? undefined),
-    [activeCigarBrand?.id, catalogService, catalogStore, cigarForm.lineName]
   );
   const cigarBrandSuggestions = useMemo(
     () => catalogService.searchBrands(catalogStore, "cigars", cigarForm.brand),
@@ -1243,7 +1135,7 @@ export function HomeShell() {
     }
 
     try {
-      setUserCatalog(catalogService.loadUserCatalog());
+      setUserCatalog(ensureCloudSafeCatalogIds(catalogService.loadUserCatalog()));
     } catch (error) {
       console.error("Failed to load user catalog", error);
     }
@@ -1302,6 +1194,12 @@ export function HomeShell() {
       console.error("Failed to load bottle wishlist", error);
     }
   }, [catalogService, pipeEntryService]);
+
+  useEffect(() => {
+    if (view === "home") return;
+    setSearchOpen(false);
+    setSearchValue("");
+  }, [view]);
 
   useEffect(() => {
     if (!isSupabaseMode) return;
@@ -1486,14 +1384,17 @@ export function HomeShell() {
           collectionResult.status === "rejected" ? "collection" : null
         ].filter((value): value is string => Boolean(value));
 
-        setRemoteReady(true);
         if (syncFailures.length) {
+          setRemoteReady(false);
           setSyncNotice(`Your profile is connected. I still need to finish syncing: ${syncFailures.join(", ")}.`);
         } else if (remoteHasAnyData) {
+          setRemoteReady(true);
           setSyncNotice("Your profile is connected. This journal can now follow you across devices.");
         } else if (localHasAnyData) {
+          setRemoteReady(true);
           setSyncNotice("Your profile is connected. Your current journal is ready to back up.");
         } else {
+          setRemoteReady(true);
           setSyncNotice("Your profile is ready. This journal can start saving across devices.");
         }
       } catch (error) {
@@ -1540,9 +1441,6 @@ export function HomeShell() {
     }
 
     if (!draftHasMeaningfulData) {
-      if (syncNotice === "I couldn't save that draft to your profile yet.") {
-        setSyncNotice("Your profile is connected. This journal can now follow you across devices.");
-      }
       return;
     }
 
@@ -1635,7 +1533,7 @@ export function HomeShell() {
   }, [isHydrated, spiritEntries]);
 
   useEffect(() => {
-    if (!isHydrated || !isSupabaseMode || !authUserId) return;
+    if (!isHydrated || !isSupabaseMode || !authUserId || !remoteReady) return;
 
     void saveRemoteJournalEntries([...pipeEntries, ...cigarEntries, ...spiritEntries])
       .then(() => setSyncNotice("Journal saved to your profile."))
@@ -1643,7 +1541,7 @@ export function HomeShell() {
         console.error("Failed to sync remote journal entries", error);
         setSyncNotice("I couldn't save your journal changes yet.");
       });
-  }, [authUserId, cigarEntries, isHydrated, isSupabaseMode, pipeEntries, spiritEntries]);
+  }, [authUserId, cigarEntries, isHydrated, isSupabaseMode, pipeEntries, remoteReady, spiritEntries]);
 
   useEffect(() => {
     if (!isHydrated) return;
@@ -2233,6 +2131,22 @@ export function HomeShell() {
   function openNewSession(category: Category) {
     setSelectedCategory(category);
     setView("form");
+    if (category === "pipe") {
+      setPipeForm((current) => ({
+        ...current,
+        date: current.date || getLocalDateInputValue()
+      }));
+    } else if (category === "cigar") {
+      setCigarForm((current) => ({
+        ...current,
+        date: current.date || getLocalDateInputValue()
+      }));
+    } else {
+      setSpiritForm((current) => ({
+        ...current,
+        date: current.date || getLocalDateInputValue()
+      }));
+    }
     if (category !== "pipe") {
       setEntryMode("quick");
     }
@@ -2629,15 +2543,6 @@ export function HomeShell() {
     setCustomSpiritFlavor("");
   }
 
-  function toggleSpiritTag(tag: string) {
-    setSpiritForm((current) => ({
-      ...current,
-      quickTags: current.quickTags.includes(tag)
-        ? current.quickTags.filter((item) => item !== tag)
-        : [...current.quickTags, tag]
-    }));
-  }
-
   function selectSpiritBrandSuggestion(suggestion: CatalogSuggestion) {
     updateSpiritField("brand", suggestion.label);
   }
@@ -3021,6 +2926,11 @@ export function HomeShell() {
   }
 
   function savePipeEntry() {
+    if (!pipeForm.date) {
+      window.alert("Please choose a session date.");
+      return;
+    }
+
     if (!pipeForm.blendName.trim()) {
       window.alert("Please enter a blend name.");
       return;
@@ -3140,6 +3050,11 @@ export function HomeShell() {
   }
 
   function saveCigarEntry() {
+    if (!cigarForm.date) {
+      window.alert("Please choose a session date.");
+      return;
+    }
+
     if (!cigarForm.lineName.trim()) {
       window.alert("Please enter a cigar line.");
       return;
@@ -3243,8 +3158,13 @@ export function HomeShell() {
   }
 
   function saveSpiritEntry() {
+    if (!spiritForm.date) {
+      window.alert("Please choose a session date.");
+      return;
+    }
+
     if (!spiritForm.name.trim()) {
-      window.alert("Please enter a whiskey name.");
+      window.alert("Please enter a spirit name.");
       return;
     }
 
@@ -3358,9 +3278,9 @@ export function HomeShell() {
     }
 
     if (activeSort === "newest") {
-      entries.sort((a, b) => (b.date || b.createdAt).localeCompare(a.date || a.createdAt));
+      entries.sort((a, b) => compareJournalEntriesByDate(b, a));
     } else if (activeSort === "oldest") {
-      entries.sort((a, b) => (a.date || a.createdAt).localeCompare(b.date || b.createdAt));
+      entries.sort(compareJournalEntriesByDate);
     } else if (activeSort === "az") {
       entries.sort((a, b) => getEntryDisplayTitle(a).localeCompare(getEntryDisplayTitle(b)));
     } else if (activeSort === "top") {
@@ -3444,7 +3364,11 @@ export function HomeShell() {
               </button>
             </div>
 
-            {visibleEntries.length ? (
+            {!isHydrated ? (
+              <section className="list-empty journal-loading" aria-live="polite">
+                <p>Opening your log...</p>
+              </section>
+            ) : visibleEntries.length ? (
               <section className="entry-list">
                 {visibleEntries.map((entry) => (
                   <article key={entry.id} className="entry-card">
@@ -4076,8 +4000,9 @@ export function HomeShell() {
                   </div>
 
                   <div className="field">
-                    <label>Date Added to Humidor</label>
+                    <label htmlFor="collection-cigar-date-added">Date Added to Humidor</label>
                     <input
+                      id="collection-cigar-date-added"
                       type="date"
                       value={collectionCigarForm.dateAdded}
                       onChange={(event) => updateCollectionCigarField("dateAdded", event.target.value)}
@@ -4211,8 +4136,9 @@ export function HomeShell() {
                   </div>
 
                   <div className="field">
-                    <label>Date Acquired</label>
+                    <label htmlFor="collection-tobacco-date-acquired">Date Acquired</label>
                     <input
+                      id="collection-tobacco-date-acquired"
                       type="date"
                       value={collectionTobaccoForm.dateAcquired}
                       onChange={(event) => updateCollectionTobaccoField("dateAcquired", event.target.value)}
@@ -4429,8 +4355,9 @@ export function HomeShell() {
                   </div>
 
                   <div className="field">
-                    <label>Date Acquired</label>
+                    <label htmlFor="collection-pipe-date-acquired">Date Acquired</label>
                     <input
+                      id="collection-pipe-date-acquired"
                       type="date"
                       value={collectionPipeForm.dateAcquired}
                       onChange={(event) => updateCollectionPipeField("dateAcquired", event.target.value)}
@@ -4617,12 +4544,18 @@ export function HomeShell() {
             </header>
 
             <section className="profile-hero">
-              <div className="profile-kicker">{authUserId ? "Your Profile" : "Account"}</div>
-              <h1 className="profile-title">{authUserId ? "Your profile" : "Sign in to your profile"}</h1>
+              <div className="profile-kicker">
+                {authUserId ? "Your Profile" : cloudProfilesAvailable ? "Account" : "Local Profile"}
+              </div>
+              <h1 className="profile-title">
+                {authUserId ? "Your profile" : cloudProfilesAvailable ? "Sign in to your profile" : "Saved on this device"}
+              </h1>
               <p className="profile-copy">
                 {authUserId
                   ? "Your journal is saved to your profile and can follow you across devices."
-                  : journalEntryCount > 0
+                  : !cloudProfilesAvailable
+                    ? "Your journal is stored in this browser. Connect Supabase to enable sign-in and cross-device access."
+                    : journalEntryCount > 0
                     ? "Sign in to save this journal to your profile."
                     : "Use your profile to save your journal and access it across devices."}
               </p>
@@ -4656,36 +4589,42 @@ export function HomeShell() {
                   </div>
                 </div>
               ) : (
-                <div className="profile-auth-panel">
-                  {journalEntryCount > 0 ? (
-                    <div className="cloud-strip-note">
-                      Sign in to add these entries to your profile.
-                    </div>
-                  ) : null}
-                  {socialAuthProviders.map((provider) => (
-                    <button
-                      key={provider.provider}
-                      className="social-auth-btn"
-                      type="button"
-                      onClick={() => void signInWithProvider(provider.provider)}
-                      disabled={authBusy}
-                    >
-                      <span className="social-auth-mark">{provider.mark}</span>
-                      {provider.label}
+                cloudProfilesAvailable ? (
+                  <div className="profile-auth-panel">
+                    {journalEntryCount > 0 ? (
+                      <div className="cloud-strip-note">
+                        Sign in to add these entries to your profile.
+                      </div>
+                    ) : null}
+                    {socialAuthProviders.map((provider) => (
+                      <button
+                        key={provider.provider}
+                        className="social-auth-btn"
+                        type="button"
+                        onClick={() => void signInWithProvider(provider.provider)}
+                        disabled={authBusy}
+                      >
+                        <span className="social-auth-mark">{provider.mark}</span>
+                        {provider.label}
+                      </button>
+                    ))}
+                    <div className="auth-divider">or continue with email</div>
+                    <input
+                      className="cloud-email-input"
+                      type="email"
+                      placeholder="Email address"
+                      value={authEmailInput}
+                      onChange={(event) => setAuthEmailInput(event.target.value)}
+                    />
+                    <button className="cloud-primary-btn" type="button" onClick={() => void sendMagicLink()} disabled={authBusy}>
+                      {authBusy ? "Sending..." : "Send Sign-In Link"}
                     </button>
-                  ))}
-                  <div className="auth-divider">or continue with email</div>
-                  <input
-                    className="cloud-email-input"
-                    type="email"
-                    placeholder="Email address"
-                    value={authEmailInput}
-                    onChange={(event) => setAuthEmailInput(event.target.value)}
-                  />
-                  <button className="cloud-primary-btn" type="button" onClick={() => void sendMagicLink()} disabled={authBusy}>
-                    {authBusy ? "Sending..." : "Send Sign-In Link"}
-                  </button>
-                </div>
+                  </div>
+                ) : (
+                  <div className="cloud-strip-note">
+                    Cloud profiles are not connected yet. Your journal remains available on this device.
+                  </div>
+                )
               )}
 
               {authNotice ? <div className="cloud-strip-note">{authNotice}</div> : null}
@@ -4700,11 +4639,15 @@ export function HomeShell() {
               <div className="profile-settings-list">
                 <div className="profile-setting-row">
                   <span className="detail-label">Email</span>
-                  <span className="detail-value">{authUserId ? authUserEmail ?? "Profile connected" : "Not signed in"}</span>
+                  <span className="detail-value">
+                    {authUserId ? authUserEmail ?? "Profile connected" : cloudProfilesAvailable ? "Not signed in" : "Not connected"}
+                  </span>
                 </div>
                 <div className="profile-setting-row">
                   <span className="detail-label">Journal</span>
-                  <span className="detail-value">{authUserId ? "Saved to your profile" : "Sign in to save to your profile"}</span>
+                  <span className="detail-value">
+                    {authUserId ? "Saved to your profile" : cloudProfilesAvailable ? "Sign in to save to your profile" : "Saved on this device"}
+                  </span>
                 </div>
                 <div className="profile-setting-row">
                   <span className="detail-label">Settings</span>
@@ -5574,9 +5517,11 @@ export function HomeShell() {
               <>
                 <section className="form-section">
                   <div className="field">
-                    <label>Date</label>
+                    <label htmlFor="pipe-session-date">Date <span className="req">*</span></label>
                     <input
+                      id="pipe-session-date"
                       type="date"
+                      required
                       value={pipeForm.date}
                       onChange={(event) => updatePipeField("date", event.target.value)}
                     />
@@ -5598,54 +5543,6 @@ export function HomeShell() {
                     </div>
                   </div>
                 </section>
-
-                {entryMode === "full" ? (
-                  <section className="form-section">
-                    <div className="section-title">
-                      <img className="section-title-icon" src="/cigar.png" alt="" />
-                      Acquisition
-                    </div>
-
-                    <div className="field">
-                      <label>Date of Purchase</label>
-                      <input
-                        type="date"
-                        value={cigarForm.purchaseDate}
-                        onChange={(event) => updateCigarField("purchaseDate", event.target.value)}
-                      />
-                    </div>
-
-                    <div className="field">
-                      <label>Bought From</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. local B&M, trade, online shop..."
-                        value={cigarForm.boughtFrom}
-                        onChange={(event) => updateCigarField("boughtFrom", event.target.value)}
-                      />
-                    </div>
-
-                    <div className="field">
-                      <label>Price</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. $14 or box split"
-                        value={cigarForm.price}
-                        onChange={(event) => updateCigarField("price", event.target.value)}
-                      />
-                    </div>
-
-                    <div className="field">
-                      <label>Rest Time</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. 3 weeks humidor rest"
-                        value={cigarForm.restTime}
-                        onChange={(event) => updateCigarField("restTime", event.target.value)}
-                      />
-                    </div>
-                  </section>
-                ) : null}
 
                 {entryMode === "full" ? (
                   <section className="form-section">
@@ -5928,62 +5825,36 @@ export function HomeShell() {
                     Rate It
                   </div>
 
-                  {[
-                    ["Flavor", "Taste, richness, and depth", "flavor"],
-                    ["Strength", "Nicotine and body level", "strength"],
-                    ["Room Note", "Aroma in the room", "roomNote"],
-                    ["Performance", "Burn, comfort, and ease", "performance"],
-                    ["Overall Enjoyment", "Total smoking satisfaction", "enjoyment"]
-                  ].map(([label, hint, key]) => (
-                    <div key={key} className="field">
-                      <label>
-                        {label} <span className="label-hint">— {hint}</span>
-                      </label>
-                      <div
-                        className="flame-rating"
-                        onMouseLeave={() => setPipeRatingHover((current) => ({ ...current, [key]: 0 }))}
-                      >
-                        {Array.from({ length: 10 }, (_, index) => index + 1).map((value) => (
-                          <button
-                            key={value}
-                            className={
-                              value <= ((pipeRatingHover[key as keyof PipeRatings] || pipeRatings[key as keyof PipeRatings]))
-                                ? "flame-btn lit"
-                                : "flame-btn"
-                            }
-                            type="button"
-                            onMouseEnter={() => setPipeRatingHover((current) => ({ ...current, [key]: value }))}
-                            onClick={() => setPipeRating(key as keyof PipeRatings, value)}
-                            aria-label={`${label} rating ${value}`}
-                          >
-                            🔥
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+                  {(entryMode === "full"
+                    ? [
+                        ["Flavor", "Taste, richness, and depth", "flavor"],
+                        ["Strength", "Nicotine and body level", "strength"],
+                        ["Room Note", "Aroma in the room", "roomNote"],
+                        ["Performance", "Burn, comfort, and ease", "performance"],
+                        ["Overall Enjoyment", "Total smoking satisfaction", "enjoyment"]
+                      ]
+                    : [["Overall Rating", "Your gut reaction", "enjoyment"]]
+                  ).map(([label, hint, key]) => (
+                    <FlameRatingField
+                      key={key}
+                      label={label}
+                      hint={hint}
+                      value={pipeRatings[key as keyof PipeRatings]}
+                      hoverValue={pipeRatingHover[key as keyof PipeRatings]}
+                      onHover={(value) => setPipeRatingHover((current) => ({ ...current, [key]: value }))}
+                      onChange={(value) => setPipeRating(key as keyof PipeRatings, value)}
+                    />
                   ))}
 
                   {entryMode === "full" ? (
-                    <div className="field">
-                      <label>Mechanics Score <span className="label-hint">— Burn, draw, and comfort</span></label>
-                      <div
-                        className="flame-rating"
-                        onMouseLeave={() => setPipeRatingHover((current) => ({ ...current, mechanics: 0 }))}
-                      >
-                        {Array.from({ length: 10 }, (_, index) => index + 1).map((value) => (
-                          <button
-                            key={value}
-                            className={value <= (pipeRatingHover.mechanics || pipeRatings.mechanics) ? "flame-btn lit" : "flame-btn"}
-                            type="button"
-                            onMouseEnter={() => setPipeRatingHover((current) => ({ ...current, mechanics: value }))}
-                            onClick={() => setPipeRating("mechanics", value)}
-                            aria-label={`Mechanics rating ${value}`}
-                          >
-                            🔥
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+                    <FlameRatingField
+                      label="Mechanics Score"
+                      hint="Burn, draw, and comfort"
+                      value={pipeRatings.mechanics}
+                      hoverValue={pipeRatingHover.mechanics}
+                      onHover={(value) => setPipeRatingHover((current) => ({ ...current, mechanics: value }))}
+                      onChange={(value) => setPipeRating("mechanics", value)}
+                    />
                   ) : null}
                 </section>
 
@@ -6010,9 +5881,11 @@ export function HomeShell() {
                   </div>
 
                   <div className="suggested-score-box">
-                    <div className="suggested-score-label">Suggested Score</div>
+                    <div className="suggested-score-label">{entryMode === "quick" ? "Your Rating" : "Suggested Score"}</div>
                     <div className="suggested-score-val">{pipeSuggestedScore.toFixed(1)} / 10</div>
-                    <div className="suggested-score-note">Based on your current tasting ratings</div>
+                    <div className="suggested-score-note">
+                      {entryMode === "quick" ? "Your overall impression" : "Based on your current tasting ratings"}
+                    </div>
                   </div>
                 </section>
               </>
@@ -6020,9 +5893,11 @@ export function HomeShell() {
               <>
                 <section className="form-section">
                   <div className="field">
-                    <label>Date</label>
+                    <label htmlFor="cigar-session-date">Date <span className="req">*</span></label>
                     <input
+                      id="cigar-session-date"
                       type="date"
+                      required
                       value={cigarForm.date}
                       onChange={(event) => updateCigarField("date", event.target.value)}
                     />
@@ -6044,6 +5919,55 @@ export function HomeShell() {
                     </div>
                   </div>
                 </section>
+
+                {entryMode === "full" ? (
+                  <section className="form-section">
+                    <div className="section-title">
+                      <img className="section-title-icon" src="/cigar.png" alt="" />
+                      Acquisition
+                    </div>
+
+                    <div className="field">
+                      <label htmlFor="cigar-purchase-date">Date of Purchase</label>
+                      <input
+                        id="cigar-purchase-date"
+                        type="date"
+                        value={cigarForm.purchaseDate}
+                        onChange={(event) => updateCigarField("purchaseDate", event.target.value)}
+                      />
+                    </div>
+
+                    <div className="field">
+                      <label>Bought From</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. local B&M, trade, online shop..."
+                        value={cigarForm.boughtFrom}
+                        onChange={(event) => updateCigarField("boughtFrom", event.target.value)}
+                      />
+                    </div>
+
+                    <div className="field">
+                      <label>Price</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. $14 or box split"
+                        value={cigarForm.price}
+                        onChange={(event) => updateCigarField("price", event.target.value)}
+                      />
+                    </div>
+
+                    <div className="field">
+                      <label>Rest Time</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 3 weeks humidor rest"
+                        value={cigarForm.restTime}
+                        onChange={(event) => updateCigarField("restTime", event.target.value)}
+                      />
+                    </div>
+                  </section>
+                ) : null}
 
                 {entryMode === "full" ? (
                   <section className="form-section">
@@ -6296,41 +6220,27 @@ export function HomeShell() {
                     Rate It
                   </div>
 
-                  {[
-                    ["Flavor", "Depth, balance, and richness", "flavor"],
-                    ["Construction", "Build and feel in hand", "construction"],
-                    ["Draw", "Airflow and resistance", "draw"],
-                    ["Burn", "Evenness and combustion", "burn"],
-                    ["Aroma", "Room and wrapper aroma", "aroma"],
-                    ["Strength", "Body and nicotine", "strength"],
-                    ["Enjoyment", "Overall satisfaction", "enjoyment"]
-                  ].map(([label, hint, key]) => (
-                    <div key={key} className="field">
-                      <label>
-                        {label} <span className="label-hint">— {hint}</span>
-                      </label>
-                      <div
-                        className="flame-rating"
-                        onMouseLeave={() => setCigarRatingHover((current) => ({ ...current, [key]: 0 }))}
-                      >
-                        {Array.from({ length: 10 }, (_, index) => index + 1).map((value) => (
-                          <button
-                            key={value}
-                            className={
-                              value <= (cigarRatingHover[key as keyof CigarRatings] || cigarRatings[key as keyof CigarRatings])
-                                ? "flame-btn lit"
-                                : "flame-btn"
-                            }
-                            type="button"
-                            onMouseEnter={() => setCigarRatingHover((current) => ({ ...current, [key]: value }))}
-                            onClick={() => setCigarRating(key as keyof CigarRatings, value)}
-                            aria-label={`${label} rating ${value}`}
-                          >
-                            🔥
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+                  {(entryMode === "full"
+                    ? [
+                        ["Flavor", "Depth, balance, and richness", "flavor"],
+                        ["Construction", "Build and feel in hand", "construction"],
+                        ["Draw", "Airflow and resistance", "draw"],
+                        ["Burn", "Evenness and combustion", "burn"],
+                        ["Aroma", "Room and wrapper aroma", "aroma"],
+                        ["Strength", "Body and nicotine", "strength"],
+                        ["Enjoyment", "Overall satisfaction", "enjoyment"]
+                      ]
+                    : [["Overall Rating", "Your gut reaction", "enjoyment"]]
+                  ).map(([label, hint, key]) => (
+                    <FlameRatingField
+                      key={key}
+                      label={label}
+                      hint={hint}
+                      value={cigarRatings[key as keyof CigarRatings]}
+                      hoverValue={cigarRatingHover[key as keyof CigarRatings]}
+                      onHover={(value) => setCigarRatingHover((current) => ({ ...current, [key]: value }))}
+                      onChange={(value) => setCigarRating(key as keyof CigarRatings, value)}
+                    />
                   ))}
                 </section>
 
@@ -6394,9 +6304,11 @@ export function HomeShell() {
                   </div>
 
                   <div className="suggested-score-box">
-                    <div className="suggested-score-label">Suggested Score</div>
+                    <div className="suggested-score-label">{entryMode === "quick" ? "Your Rating" : "Suggested Score"}</div>
                     <div className="suggested-score-val">{cigarSuggestedScore.toFixed(1)} / 10</div>
-                    <div className="suggested-score-note">Based on your current tasting ratings</div>
+                    <div className="suggested-score-note">
+                      {entryMode === "quick" ? "Your overall impression" : "Based on your current tasting ratings"}
+                    </div>
                   </div>
                 </section>
               </>
@@ -6404,9 +6316,11 @@ export function HomeShell() {
               <>
                 <section className="form-section">
                   <div className="field">
-                    <label>Date</label>
+                    <label htmlFor="spirit-session-date">Date <span className="req">*</span></label>
                     <input
+                      id="spirit-session-date"
                       type="date"
+                      required
                       value={spiritForm.date}
                       onChange={(event) => updateSpiritField("date", event.target.value)}
                     />
@@ -6940,65 +6854,22 @@ export function HomeShell() {
           </section>
         )}
 
-        <nav className="bottom-nav" aria-label="Primary">
-          <button
-            className={view === "home" ? "bn-tab active" : "bn-tab"}
-            type="button"
-            onClick={() => {
-              setEditingPipeEntryId(null);
-              setEditingCigarEntryId(null);
-              setView("home");
-            }}
-          >
-            <svg width="26" height="26" viewBox="0 0 492.308 492.308" fill="currentColor" aria-hidden="true">
-              <path d="M483.856,24.067c-77.804-11.16-159.893,1.963-237.703,37.817C168.344,26.041,86.255,12.931,8.452,24.067L0,25.274v408.111l11.24-1.611c75.365-10.774,155.077,2.351,230.385,37.88l0.722,0.355l3.297,2.02l0.416-0.196l0.555,0.273l3.522-2.194l0.344-0.162c75.519-35.625,155.231-48.76,230.587-37.976l11.24,1.611V25.274L483.856,24.067z M236.308,445.635c-56.75-24.63-115.567-37.216-173.183-37.216c-14.567,0-29.067,0.808-43.433,2.428V42.452c71.019-8.447,145.577,4.12,216.615,36.519V445.635z M329.49,53.024c23.187-5.99,46.463-9.914,69.644-11.742v118.752l-34.827-26.12l-34.817,26.115V53.024z M472.615,410.846c-71.096-8.043-145.413,3.913-216.615,34.798V78.971c17.749-8.094,35.719-14.949,53.798-20.548v141l54.51-40.894l54.519,40.889V40.042c18.079-0.496,36.046,0.301,53.788,2.41V410.846z" />
-              <path d="M47.471,343l2.788,19.49c49.875-7.115,102.663,1.587,152.673,25.197l8.404-17.808C157.827,344.616,101.135,335.317,47.471,343z" />
-              <path d="M47.471,264.063l2.788,19.49c49.875-7.13,102.663,1.587,152.673,25.197l8.404-17.808C157.817,265.668,101.135,256.385,47.471,264.063z" />
-              <path d="M47.471,185.125l2.788,19.49c49.875-7.125,102.663,1.582,152.673,25.197l8.404-17.808C157.827,186.736,101.135,177.447,47.471,185.125z" />
-              <path d="M47.471,106.188l2.788,19.49c49.885-7.13,102.654,1.572,152.673,25.192l8.404-17.808C157.817,107.798,101.135,98.5,47.471,106.188z" />
-            </svg>
-            The Log
-          </button>
-
-          <button
-            className="bn-log"
-            type="button"
-            onClick={() => {
-              setEditingPipeEntryId(null);
-              setEditingCigarEntryId(null);
-              setView("picker");
-            }}
-          >
-            <div className="bn-log-circle">
-              <span className="bn-log-plus">+</span>
-            </div>
-            <span className="bn-log-label">Session</span>
-          </button>
-
-          <button
-            className={view === "collection" ? "bn-tab active" : "bn-tab"}
-            type="button"
-            onClick={() => setView("collection")}
-          >
-            <svg
-              width="26"
-              height="26"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <rect x="3" y="3" width="7" height="7" rx="1" />
-              <rect x="14" y="3" width="7" height="7" rx="1" />
-              <rect x="3" y="14" width="7" height="7" rx="1" />
-              <rect x="14" y="14" width="7" height="7" rx="1" />
-            </svg>
-            Collection
-          </button>
-        </nav>
+        <BottomNavigation
+          active={view === "home" ? "log" : view === "collection" ? "collection" : null}
+          onLog={() => {
+            setEditingPipeEntryId(null);
+            setEditingCigarEntryId(null);
+            setEditingSpiritEntryId(null);
+            setView("home");
+          }}
+          onSession={() => {
+            setEditingPipeEntryId(null);
+            setEditingCigarEntryId(null);
+            setEditingSpiritEntryId(null);
+            setView("picker");
+          }}
+          onCollection={() => setView("collection")}
+        />
       </div>
     </main>
   );
