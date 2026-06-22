@@ -27,6 +27,8 @@ Success criteria:
 
 - build passes
 - typecheck passes
+- lint passes
+- focused automated tests pass
 - core journal flows work
 - collection flows work
 - profile flow is understandable
@@ -185,7 +187,7 @@ Not needed immediately, but should be the likely paid-launch path.
 
 For every release candidate:
 
-1. run build and typecheck
+1. run `npm run check`
 2. smoke-test profile flow
 3. smoke-test one quick and one full entry in each category
 4. smoke-test collection add/edit in each room

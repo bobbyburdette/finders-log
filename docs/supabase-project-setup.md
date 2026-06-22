@@ -24,7 +24,7 @@ You do **not** need to understand all the infrastructure details. The goal is si
 
 Use this repo file as your starting point:
 
-- [.env.local.example](/Users/bobby.burdette/Pipe%20Journal/.env.local.example)
+- [.env.local.example](.env.local.example)
 
 Create a local file named `.env.local` in the project root and paste in your real values.
 
@@ -39,7 +39,7 @@ The most important ones are:
 
 For the first Supabase-backed phase, use:
 
-- [db/supabase-bootstrap.sql](/Users/bobby.burdette/Pipe%20Journal/db/supabase-bootstrap.sql)
+- [db/supabase-bootstrap.sql](db/supabase-bootstrap.sql)
 
 This SQL file is designed for Supabase specifically. It:
 
@@ -76,7 +76,7 @@ Add these redirect URLs in the Supabase auth URL configuration:
 - your hosted preview callback URL
 - your production callback URL
 
-The app sends users back to `/auth/callback?next=/?auth=profile` after social login or email magic-link login. The callback exchanges the Supabase auth code, returns the user to the profile screen, and displays provider errors there if Supabase sends one back.
+The app sends users back to `/auth/callback` after social login or email magic-link login. The callback exchanges the Supabase auth code, returns the user to the profile screen, and displays provider errors there if Supabase sends one back.
 
 ## How To Tell If It Is Working
 

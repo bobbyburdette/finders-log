@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import type { CatalogSuggestion } from "@/lib/catalog";
 
 type CatalogAutocompleteFieldProps = {
@@ -27,6 +27,7 @@ export function CatalogAutocompleteField({
   onCreateCustom
 }: CatalogAutocompleteFieldProps) {
   const [isFocused, setIsFocused] = useState(false);
+  const inputId = useId();
 
   const trimmedValue = value.trim();
   const showPanel = isFocused && (suggestions.length > 0 || (!!trimmedValue && !!onCreateCustom));
@@ -50,11 +51,12 @@ export function CatalogAutocompleteField({
 
   return (
     <div className="field">
-      <label>
+      <label htmlFor={inputId}>
         {label}
         {required ? <span className="req"> *</span> : null}
       </label>
       <input
+        id={inputId}
         type="text"
         placeholder={placeholder}
         value={value}

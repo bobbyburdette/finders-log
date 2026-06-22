@@ -6,6 +6,8 @@ This document turns the current product into a shipping checklist instead of a l
 
 The app is no longer just a prototype.
 
+Last verified locally: June 2026.
+
 It already has:
 
 - strong mobile-first UX for `Pipe`, `Cigar`, and `Spirits`
@@ -16,6 +18,8 @@ It already has:
 - profile/settings home
 - Supabase project setup and bootstrap schema
 - backend lanes for journal and collection
+- automated date/sort and sync-reconciliation tests
+- lint, typecheck, test, and production-build quality gates
 
 It does **not** yet have enough hardening to treat as a public launch.
 
@@ -110,7 +114,8 @@ For this app, launch-ready means:
 - [ ] Production deployment target is chosen
 - [ ] Environment variables are documented for local, preview, and production
 - [ ] Auth redirect URLs are configured for hosted environments
-- [ ] Build, typecheck, and smoke test pass before each release
+- [x] Local build, typecheck, lint, and focused automated tests pass
+- [ ] Hosted smoke test passes before each release
 
 ### Monitoring
 
@@ -122,9 +127,9 @@ For this app, launch-ready means:
 
 The highest-value next phase is:
 
-1. finish cloud parity for all journal and collection domains
+1. verify cloud parity and reconciliation against a real Supabase project
 2. deploy to a real hosted preview
-3. run a focused QA pass
+3. test sign-in and conflicting changes across two devices
 4. invite a very small tester group
 5. fix what breaks
 
