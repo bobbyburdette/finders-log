@@ -24,7 +24,7 @@ You do **not** need to understand all the infrastructure details. The goal is si
 
 Use this repo file as your starting point:
 
-- [.env.local.example](/Users/bobby.burdette/Pipe%20Journal/.env.local.example)
+- [.env.local.example](.env.local.example)
 
 Create a local file named `.env.local` in the project root and paste in your real values.
 
@@ -39,7 +39,7 @@ The most important ones are:
 
 For the first Supabase-backed phase, use:
 
-- [db/supabase-bootstrap.sql](/Users/bobby.burdette/Pipe%20Journal/db/supabase-bootstrap.sql)
+- [db/supabase-bootstrap.sql](db/supabase-bootstrap.sql)
 
 This SQL file is designed for Supabase specifically. It:
 

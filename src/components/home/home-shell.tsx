@@ -44,579 +44,89 @@ import {
 import { fetchRemoteUserCatalog, saveRemoteUserCatalog } from "@/lib/services/remote/catalog-service";
 import { fetchRemoteCollectionState, saveRemoteCollectionState } from "@/lib/services/remote/collection-service";
 import { appServices } from "@/lib/services/service-factory";
-import { getAuthCallbackUrl } from "@/lib/site-url";
 import { createClient as createSupabaseBrowserClient } from "@/lib/supabase/client";
 
-type View = "home" | "collection" | "collectionForm" | "collectionDetail" | "picker" | "form" | "detail" | "profile";
-type Category = "cigar" | "pipe" | "spirits";
-type JournalEntry = PipeEntry | CigarEntry | SpiritEntry;
-type CollectionTab = "humidor" | "cellar" | "bar";
-type CollectionFormKind = "cigar" | "tobacco" | "pipe" | "bottle";
-type CollectionDetailKind = CollectionFormKind;
-
-type CollectionWishlistKind = "cigar" | "pipe" | "bottle";
-type SocialAuthProvider = "google" | "apple" | "facebook";
-
-function createJournalEntryId() {
-  return crypto.randomUUID();
-}
-
-function createCollectionItemId() {
-  return crypto.randomUUID();
-}
-
-function isUuid(value: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
-}
-
-function ensureCloudSafeEntryIds<T extends JournalEntry>(entries: T[]) {
-  return entries.map((entry) => (isUuid(entry.id) ? entry : { ...entry, id: createJournalEntryId() }));
-}
-
-function ensureCloudSafeCollectionItemIds<T extends { id: string }>(items: T[]) {
-  return items.map((item) => (isUuid(item.id) ? item : { ...item, id: createCollectionItemId() }));
-}
-
-function haveSameIds<T extends { id: string }>(left: T[], right: T[]) {
-  return left.length === right.length && left.every((item, index) => item.id === right[index]?.id);
-}
-
-function mergeEntriesById<T extends JournalEntry>(remoteEntries: T[], localEntries: T[]) {
-  const seenIds = new Set(remoteEntries.map((entry) => entry.id));
-
-  return [...remoteEntries, ...localEntries.filter((entry) => !seenIds.has(entry.id))].sort(
-    compareJournalEntriesByDate
-  );
-}
-
-function removeDeletedEntries<T extends JournalEntry>(entries: T[], deletedEntryIds: Set<string>) {
-  if (!deletedEntryIds.size) return entries;
-  return entries.filter((entry) => !deletedEntryIds.has(entry.id));
-}
-
-const socialAuthProviders: Array<{
-  provider: SocialAuthProvider;
-  label: string;
-  mark: string;
-}> = [
-  { provider: "google", label: "Continue with Google", mark: "G" }
-];
-
-function getProfileAuthRedirectUrl() {
-  const fallbackOrigin = "http://localhost:3000";
-  const currentOrigin = typeof window !== "undefined" ? window.location.origin : "";
-  return currentOrigin ? `${currentOrigin}/auth/callback` : getAuthCallbackUrl() || `${fallbackOrigin}/auth/callback`;
-}
-
-const pickerItems: Array<{
-  key: Category;
-  label: string;
-  sub: string;
-  image: string;
-  title: string;
-}> = [
-  {
-    key: "cigar",
-    label: "Cigar",
-    sub: "Premium cigars & sessions",
-    image: "/cigar.png",
-    title: "New Cigar Session"
-  },
-  {
-    key: "pipe",
-    label: "Pipe",
-    sub: "Blends, bowls & tasting notes",
-    image: "/pipe.png",
-    title: "New Pipe Session"
-  },
-  {
-    key: "spirits",
-    label: "Spirits",
-    sub: "Whiskey, bourbon & beyond",
-    image: "/whiskey.png",
-    title: "New Spirits Session"
-  }
-];
-
-const cigarFlavorFamilies = [
-  "Cedar",
-  "Oak",
-  "Leather",
-  "Earth",
-  "Pepper",
-  "Cinnamon",
-  "Nutmeg",
-  "Clove",
-  "Coffee",
-  "Espresso",
-  "Cocoa",
-  "Dark Chocolate",
-  "Cream",
-  "Caramel",
-  "Molasses",
-  "Honey",
-  "Vanilla",
-  "Toast",
-  "Almond",
-  "Cashew",
-  "Hay",
-  "Floral",
-  "Citrus",
-  "Cherry",
-  "Dried Fruit",
-  "Raisin",
-  "Sweetness",
-  "Mineral"
-];
-
-const cigarStrengthOptions = ["Mellow", "Mild", "Medium", "Med-Bold", "Bold"] as const;
-const spiritTypeOptions = [
-  "Bourbon",
-  "Rye",
-  "American Whiskey",
-  "Scotch",
-  "Irish Whiskey",
-  "Japanese Whisky",
-  "Canadian Whisky",
-  "Rum",
-  "Tequila",
-  "Mezcal",
-  "Gin",
-  "Vodka",
-  "Brandy / Cognac",
-  "Liqueur",
-  "Other"
-] as const;
-const spiritDrinkStyleOptions = ["Neat", "Rocks", "Splash", "Cocktail"] as const;
-const spiritBuyAgainOptions = ["Yes", "Maybe", "No"] as const;
-const spiritColorOptions = ["Clear", "Straw", "Gold", "Copper", "Tawny", "Mahogany", "Old Oak"] as const;
-const spiritClarityOptions = ["Clear", "Hazy", "Opaque"] as const;
-const spiritLegsOptions = ["Thick / Slow", "Semi-slow", "Thin / Fast"] as const;
-const spiritBeadingOptions = ["Clings to glass", "Lingers", "None"] as const;
-const spiritGlassOptions = ["Tumbler", "Glencairn", "Tulip", "Copita", "Neat Glass"] as const;
-const spiritAromaComplexityOptions = ["Low", "Medium", "High"] as const;
-const spiritPalateSweetnessOptions = ["Dry", "Medium", "Sweet"] as const;
-const spiritPalateTextureOptions = ["Harsh", "Medium", "Smooth"] as const;
-const spiritPalateBodyOptions = ["Light", "Medium", "Full-bodied"] as const;
-const spiritFinishLengthOptions = ["Short", "Medium", "Long"] as const;
-const spiritFlavorOptions = [
-  "Woody",
-  "Smoky",
-  "Spicy",
-  "Herbal",
-  "Winey",
-  "Nutty",
-  "Malty",
-  "Caramel",
-  "Floral",
-  "Grassy",
-  "Astringent",
-  "Leather",
-  "Fruity",
-  "Honey",
-  "Peaty",
-  "Sulphuric",
-  "Vanilla",
-  "Citrus",
-  "Dried Fruit",
-  "Chocolate",
-  "Oak"
-] as const;
-
-const collectionTabs: Array<{
-  key: CollectionTab;
-  tabLabel: string;
-  heroTitle: string;
-  heroSubtitle: string;
-  heroImage: string;
-  sections: Array<{
-    title: string;
-    emptyCopy: string;
-    actionLabel: string;
-    actionCategory: Category;
-    actionKind?: CollectionFormKind;
-  }>;
-}> = [
-  {
-    key: "humidor",
-    tabLabel: "The Humidor",
-    heroTitle: "The Humidor",
-    heroSubtitle: "Cigars in your rotation",
-    heroImage: "/MyHumidor2.jpg",
-    sections: [
-      {
-        title: "My Cigars",
-        emptyCopy: "Nothing in the humidor yet.",
-        actionLabel: "Add a Cigar",
-        actionCategory: "cigar",
-        actionKind: "cigar"
-      },
-      {
-        title: "Want to Try",
-        emptyCopy: "No cigars on your radar yet.",
-        actionLabel: "Add to Wishlist",
-        actionCategory: "cigar"
-      }
-    ]
-  },
-  {
-    key: "cellar",
-    tabLabel: "The Cellar",
-    heroTitle: "The Cellar",
-    heroSubtitle: "Your tobacco collection & pipes",
-    heroImage: "/MyCellar2.jpg",
-    sections: [
-      {
-        title: "My Tobacco",
-        emptyCopy: "Your cellar is empty. Time to stock up.",
-        actionLabel: "Add a Tobacco",
-        actionCategory: "pipe",
-        actionKind: "tobacco"
-      },
-      {
-        title: "My Pipes",
-        emptyCopy: "No pipes in the rack yet.",
-        actionLabel: "Add a Pipe",
-        actionCategory: "pipe",
-        actionKind: "pipe"
-      },
-      {
-        title: "Want to Try",
-        emptyCopy: "Nothing on your cellar wishlist yet.",
-        actionLabel: "Add to Wishlist",
-        actionCategory: "pipe"
-      }
-    ]
-  },
-  {
-    key: "bar",
-    tabLabel: "The Bar",
-    heroTitle: "The Bar",
-    heroSubtitle: "Bottles open, sealed & on deck",
-    heroImage: "/MyBar2.jpg",
-    sections: [
-      {
-        title: "My Bottles",
-        emptyCopy: "The bar is dry. Time to restock.",
-        actionLabel: "Add a Bottle",
-        actionCategory: "spirits",
-        actionKind: "bottle"
-      },
-      {
-        title: "Want to Try",
-        emptyCopy: "No bottles on deck yet.",
-        actionLabel: "Add to Wishlist",
-        actionCategory: "spirits"
-      }
-    ]
-  }
-];
-
-const COLLECTION_CIGARS_KEY = "finders-log.collection.cigars";
-const COLLECTION_TOBACCOS_KEY = "finders-log.collection.tobaccos";
-const COLLECTION_PIPES_KEY = "finders-log.collection.pipes";
-const COLLECTION_BOTTLES_KEY = "finders-log.collection.bottles";
-const COLLECTION_WISHLIST_CIGARS_KEY = "finders-log.collection.wishlist.cigars";
-const COLLECTION_WISHLIST_PIPES_KEY = "finders-log.collection.wishlist.pipes";
-const COLLECTION_WISHLIST_BOTTLES_KEY = "finders-log.collection.wishlist.bottles";
-const collectionCigarVitolaOptions = ["Robusto", "Toro", "Churchill", "Corona", "Gordo", "Petit Corona", "Lancero"] as const;
-const collectionCigarWrapperShadeOptions = ["Claro", "Natural", "Colorado", "Maduro", "Oscuro"] as const;
-const collectionCigarStatusOptions = ["Resting", "Ready to Smoke", "Aging", "Gone"] as const;
-const collectionTobaccoStyleOptions = ["Virginia", "VaPer", "English", "Balkan", "Aromatic", "Burley", "Oriental", "Lakeland", "Other"] as const;
-const collectionTobaccoCutOptions = ["Ribbon", "Flake", "Broken Flake", "Coin", "Plug", "Ready Rubbed", "Shag", "Crumble Cake", "Other"] as const;
-const collectionTobaccoStorageOptions = ["Sealed Tin", "Mason Jar", "Vacuum Sealed", "Bulk Bag", "Other"] as const;
-const collectionTobaccoStatusOptions = ["Sealed", "Aging", "In Rotation", "Finished"] as const;
-const collectionPipeShapeOptions = ["Billiard", "Bent Billiard", "Dublin", "Apple", "Brandy", "Pot", "Bulldog", "Canadian", "Churchwarden", "Poker", "Rhodesian", "Prince", "Freehand", "Other"] as const;
-const collectionPipeMaterialOptions = ["Briar", "Meerschaum", "Corn Cob", "Clay", "Other"] as const;
-const collectionPipeFinishOptions = ["Smooth", "Sandblast", "Rusticated", "Carved", "Natural", "Other"] as const;
-const collectionPipeStemOptions = ["Vulcanite", "Acrylic", "Cumberland", "Horn", "Bamboo", "Other"] as const;
-const collectionPipeStatusOptions = ["Active", "Resting", "Display", "Retired"] as const;
-const collectionBottleStatusOptions = ["Sealed", "Open", "Getting Low", "Empty"] as const;
-
-const defaultCollectionCigarForm = {
-  brand: "",
-  lineName: "",
-  vitola: "",
-  quantity: "1",
-  format: "Single",
-  dateAdded: "",
-  wrapperShade: "",
-  status: "Resting",
-  notes: ""
-};
-
-const defaultCollectionTobaccoForm = {
-  name: "",
-  brand: "",
-  style: "",
-  cut: "",
-  tinDate: "",
-  quantity: "1",
-  storageFormat: "",
-  dateAcquired: "",
-  source: "",
-  nicotine: "",
-  roomNote: "",
-  status: "Sealed",
-  discontinued: false,
-  notes: ""
-};
-
-const defaultCollectionPipeForm = {
-  name: "",
-  maker: "",
-  shape: "",
-  material: "",
-  finish: "",
-  stem: "",
-  status: "Active",
-  dateAcquired: "",
-  source: "",
-  notes: ""
-};
-
-const defaultCollectionBottleForm = {
-  name: "",
-  distillery: "",
-  spiritType: "",
-  proof: "",
-  age: "",
-  status: "Sealed",
-  notes: ""
-};
-
-function safeParseStored<T>(value: string | null, fallback: T): T {
-  if (!value) return fallback;
-
-  try {
-    return JSON.parse(value) as T;
-  } catch (error) {
-    console.error("Failed to parse stored Finders Log data", error);
-    return fallback;
-  }
-}
-
-function toggleSingleChoice(current: string, option: string) {
-  return current === option ? "" : option;
-}
-
-function normalizedWeightedScore(fields: Array<[number, number]>) {
-  const valid = fields.filter(([value]) => value > 0);
-  if (!valid.length) return 0;
-
-  const totalWeight = valid.reduce((sum, [, weight]) => sum + weight, 0);
-  const score = valid.reduce((sum, [value, weight]) => sum + (value * weight) / totalWeight, 0);
-  return Math.round(score * 10) / 10;
-}
-
-  function formatJournalDate(value: string) {
-  if (!value) return "";
-
-  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (match) {
-    const [, year, month, day] = match;
-    return `${month}/${day}/${year}`;
-  }
-
-  return value;
-}
-
-function favoriteLabel(isFavorite: boolean) {
-  return isFavorite ? "Remove from favorites" : "Add to favorites";
-}
-
-function hasCatalogData(store: CatalogStore) {
-  return store.brands.length > 0 || store.items.length > 0;
-}
-
-function hasDraftData(draft: {
-  form: PipeFormState;
-  timeOfDay: string;
-  blendType: string;
-  cutType: string;
-  nicotineStrength: string;
-  components: string[];
-  ratings: PipeRatings;
-  entryMode: EntryMode;
-}) {
-  const { form, ratings } = draft;
-  return Boolean(
-    form.brand.trim() ||
-      form.blendName.trim() ||
-      form.date.trim() ||
-      form.setting.trim() ||
-      form.location.trim() ||
-      form.pipeUsed.trim() ||
-      form.lighterUsed.trim() ||
-      form.quickNotes.trim() ||
-      form.firstThirdNotes.trim() ||
-      form.middleThirdNotes.trim() ||
-      form.finalThirdNotes.trim() ||
-      form.tinNotes.trim() ||
-      form.yearBlended.trim() ||
-      form.prepNotes.trim() ||
-      draft.timeOfDay !== "Evening" ||
-      draft.blendType !== "English" ||
-      draft.cutType !== "Ribbon" ||
-      draft.nicotineStrength !== "Medium" ||
-      draft.entryMode !== "quick" ||
-      draft.components.join("|") !== "Latakia|Orientals" ||
-      Object.values(ratings).some((value) => value > 0)
-  );
-}
-
-function isPipeEntryFull(entry: PipeEntry) {
-  return Boolean(
-    entry.setting ||
-      entry.location ||
-      entry.lighterUsed ||
-      entry.firstThirdNotes ||
-      entry.middleThirdNotes ||
-      entry.finalThirdNotes ||
-      entry.tinNotes ||
-      entry.yearBlended ||
-      entry.prepNotes ||
-      entry.ratings.tin > 0 ||
-      entry.ratings.mechanics > 0
-  );
-}
-
-function isSpiritEntryFull(entry: SpiritEntry) {
-  return Boolean(
-    entry.ageStatement ||
-      entry.mashbill ||
-      entry.barrelTypeFinish ||
-      entry.batchBarrelNumber ||
-      entry.color ||
-      entry.clarity ||
-      entry.legs ||
-      entry.beading ||
-      entry.glass ||
-      entry.aromaComplexity ||
-      entry.aromaNotes ||
-      entry.palateSweetness ||
-      entry.palateTexture ||
-      entry.palateBody ||
-      entry.palateNotes ||
-      entry.flavorNotes.length > 0 ||
-      entry.finishLength ||
-      entry.finishNotes ||
-      entry.pricePaid
-  );
-}
-
-function isCigarEntryFull(entry: CigarEntry) {
-  return Boolean(
-    entry.purchaseDate ||
-      entry.boughtFrom ||
-      entry.price ||
-      entry.restTime ||
-      entry.setting ||
-      entry.location ||
-      entry.cutType ||
-      entry.countryFactory ||
-      entry.wrapper ||
-      entry.binder ||
-      entry.filler ||
-      entry.strengthBand !== "Medium" ||
-      entry.flavorNotes.length > 0 ||
-      entry.firstThirdNotes ||
-      entry.middleThirdNotes ||
-      entry.finalThirdNotes ||
-      entry.pairing ||
-      entry.buyAgain ||
-      entry.ratings.construction > 0
-  );
-}
-
-function getEntryDisplayTitle(entry: JournalEntry) {
-  if (entry.category === "pipe") return entry.blendName;
-  if (entry.category === "cigar") return entry.lineName;
-  return entry.name;
-}
-
-function getEntryMetaLine(entry: JournalEntry) {
-  const parts = [formatJournalDate(entry.date) || "No date"];
-  if (entry.category === "pipe" || entry.category === "cigar") {
-    if (entry.timeOfDay) parts.push(entry.timeOfDay);
-  }
-  if (entry.brand) parts.push(entry.brand);
-  return parts.join(" · ");
-}
-
-function getEntrySearchText(entry: JournalEntry) {
-  if (entry.category === "pipe") {
-    return [
-      entry.brand,
-      entry.blendName,
-      entry.quickNotes,
-      entry.location,
-      entry.setting,
-      entry.pipeUsed,
-      entry.firstThirdNotes,
-      entry.middleThirdNotes,
-      entry.finalThirdNotes
-    ]
-      .join(" ")
-      .toLowerCase();
-  }
-
-  if (entry.category === "cigar") {
-    return [
-      entry.brand,
-      entry.lineName,
-      entry.quickNotes,
-      entry.location,
-      entry.setting,
-      entry.vitola,
-      entry.countryFactory,
-      entry.wrapper,
-      entry.binder,
-      entry.filler,
-      entry.firstThirdNotes,
-      entry.middleThirdNotes,
-      entry.finalThirdNotes,
-      entry.pairing
-    ]
-      .join(" ")
-      .toLowerCase();
-  }
-
-  return [
-    entry.brand,
-    entry.name,
-    entry.spiritType,
-    entry.proof,
-    entry.drinkStyle,
-    entry.pricePaid,
-    entry.overallImpression,
-    entry.buyAgain,
-    ...entry.quickTags
-  ]
-    .join(" ")
-    .toLowerCase();
-}
-
-function cigarStrengthIndex(value: string) {
-  const index = cigarStrengthOptions.indexOf(value as (typeof cigarStrengthOptions)[number]);
-  return index >= 0 ? index : 2;
-}
-
-function formatSpiritProof(value: string) {
-  const trimmed = value.trim();
-  if (!trimmed) return "";
-  if (/[a-z%]/i.test(trimmed)) return trimmed;
-  return `${trimmed} proof`;
-}
-
-function getSpiritRatingLabel(value: number) {
-  if (value >= 9) return "Top Shelf";
-  if (value >= 7) return "Keeper";
-  if (value >= 5) return "Solid Pour";
-  if (value >= 3) return "Occasional Sip";
-  if (value > 0) return "Pass";
-  return "Not Rated";
-}
+import {
+  COLLECTION_BOTTLES_KEY,
+  COLLECTION_CIGARS_KEY,
+  COLLECTION_PIPES_KEY,
+  COLLECTION_TOBACCOS_KEY,
+  COLLECTION_WISHLIST_BOTTLES_KEY,
+  COLLECTION_WISHLIST_CIGARS_KEY,
+  COLLECTION_WISHLIST_PIPES_KEY,
+  cigarFlavorFamilies,
+  cigarStrengthOptions,
+  collectionBottleStatusOptions,
+  collectionCigarStatusOptions,
+  collectionCigarVitolaOptions,
+  collectionCigarWrapperShadeOptions,
+  collectionPipeFinishOptions,
+  collectionPipeMaterialOptions,
+  collectionPipeShapeOptions,
+  collectionPipeStatusOptions,
+  collectionPipeStemOptions,
+  collectionTabs,
+  collectionTobaccoCutOptions,
+  collectionTobaccoStatusOptions,
+  collectionTobaccoStorageOptions,
+  collectionTobaccoStyleOptions,
+  defaultCollectionBottleForm,
+  defaultCollectionCigarForm,
+  defaultCollectionPipeForm,
+  defaultCollectionTobaccoForm,
+  pickerItems,
+  socialAuthProviders,
+  spiritAromaComplexityOptions,
+  spiritBeadingOptions,
+  spiritBuyAgainOptions,
+  spiritClarityOptions,
+  spiritColorOptions,
+  spiritDrinkStyleOptions,
+  spiritFinishLengthOptions,
+  spiritFlavorOptions,
+  spiritGlassOptions,
+  spiritLegsOptions,
+  spiritPalateBodyOptions,
+  spiritPalateSweetnessOptions,
+  spiritPalateTextureOptions,
+  spiritTypeOptions
+} from "@/lib/home-shell/constants";
+import {
+  cigarStrengthIndex,
+  createCollectionItemId,
+  createJournalEntryId,
+  ensureCloudSafeCollectionItemIds,
+  ensureCloudSafeEntryIds,
+  favoriteLabel,
+  formatJournalDate,
+  formatSpiritProof,
+  getEntryDisplayTitle,
+  getEntryMetaLine,
+  getEntrySearchText,
+  getProfileAuthRedirectUrl,
+  getSpiritRatingLabel,
+  hasCatalogData,
+  hasDraftData,
+  haveSameIds,
+  isCigarEntryFull,
+  isPipeEntryFull,
+  isSpiritEntryFull,
+  mergeEntriesById,
+  normalizedWeightedScore,
+  removeDeletedEntries,
+  safeParseStored,
+  toggleSingleChoice
+} from "@/lib/home-shell/helpers";
+import type {
+  Category,
+  CollectionDetailKind,
+  CollectionFormKind,
+  CollectionTab,
+  CollectionWishlistKind,
+  JournalEntry,
+  SocialAuthProvider,
+  View
+} from "@/lib/home-shell/types";
 
 export function HomeShell() {
   const { catalogService, pipeEntryService } = appServices;

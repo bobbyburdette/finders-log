@@ -35,22 +35,22 @@ Those are intentionally shaped so we can later swap to `supabase` mode in one pl
 
 Code seams:
 
-- backend selection: [src/lib/backend-config.ts](/Users/bobby.burdette/Pipe%20Journal/src/lib/backend-config.ts)
-- service factory: [src/lib/services/service-factory.ts](/Users/bobby.burdette/Pipe%20Journal/src/lib/services/service-factory.ts)
-- browser repository: [src/lib/data/pipe-journal-repository.ts](/Users/bobby.burdette/Pipe%20Journal/src/lib/data/pipe-journal-repository.ts)
+- backend selection: [src/lib/backend-config.ts](src/lib/backend-config.ts)
+- service factory: [src/lib/services/service-factory.ts](src/lib/services/service-factory.ts)
+- browser repository: [src/lib/data/pipe-journal-repository.ts](src/lib/data/pipe-journal-repository.ts)
 - Supabase SSR utilities:
-  - [src/lib/supabase/client.ts](/Users/bobby.burdette/Pipe%20Journal/src/lib/supabase/client.ts)
-  - [src/lib/supabase/server.ts](/Users/bobby.burdette/Pipe%20Journal/src/lib/supabase/server.ts)
-  - [src/lib/supabase/proxy.ts](/Users/bobby.burdette/Pipe%20Journal/src/lib/supabase/proxy.ts)
-  - [proxy.ts](/Users/bobby.burdette/Pipe%20Journal/proxy.ts)
+  - [src/lib/supabase/client.ts](src/lib/supabase/client.ts)
+  - [src/lib/supabase/server.ts](src/lib/supabase/server.ts)
+  - [src/lib/supabase/proxy.ts](src/lib/supabase/proxy.ts)
+  - [proxy.ts](proxy.ts)
 - remote-ready services:
-  - [src/lib/services/remote/catalog-service.ts](/Users/bobby.burdette/Pipe%20Journal/src/lib/services/remote/catalog-service.ts)
-  - [src/lib/services/remote/pipe-entry-service.ts](/Users/bobby.burdette/Pipe%20Journal/src/lib/services/remote/pipe-entry-service.ts)
+  - [src/lib/services/remote/catalog-service.ts](src/lib/services/remote/catalog-service.ts)
+  - [src/lib/services/remote/pipe-entry-service.ts](src/lib/services/remote/pipe-entry-service.ts)
 - placeholder API routes:
-  - [src/app/api/v1/backend/status/route.ts](/Users/bobby.burdette/Pipe%20Journal/src/app/api/v1/backend/status/route.ts)
-  - [src/app/api/v1/catalog/user/route.ts](/Users/bobby.burdette/Pipe%20Journal/src/app/api/v1/catalog/user/route.ts)
-  - [src/app/api/v1/pipe-entries/route.ts](/Users/bobby.burdette/Pipe%20Journal/src/app/api/v1/pipe-entries/route.ts)
-  - [src/app/api/v1/pipe-draft/route.ts](/Users/bobby.burdette/Pipe%20Journal/src/app/api/v1/pipe-draft/route.ts)
+  - [src/app/api/v1/backend/status/route.ts](src/app/api/v1/backend/status/route.ts)
+  - [src/app/api/v1/catalog/user/route.ts](src/app/api/v1/catalog/user/route.ts)
+  - [src/app/api/v1/pipe-entries/route.ts](src/app/api/v1/pipe-entries/route.ts)
+  - [src/app/api/v1/pipe-draft/route.ts](src/app/api/v1/pipe-draft/route.ts)
 
 ## Production Data Direction
 
